@@ -135,11 +135,11 @@ svg.ebd{width:100%;height:auto;display:block;}
         <div id="view" role="img" aria-label="3D model of the transistor"></div>
         <div class="hint">Drag to rotate.</div>
         <div class="legend">
-          <span><span class="sw" style="background:#B5D4F4;border:1px solid #185FA5;"></span><span id="lgSub"></span></span>
-          <span><span class="sw" style="background:#F7C1C1;border:1px solid #A32D2D;"></span><span id="lgSD"></span></span>
-          <span><span class="sw" style="background:#185FA5;"></span><span id="lgAcc"></span></span>
+          <span><span class="sw" id="swSub"></span><span id="lgSub"></span></span>
+          <span><span class="sw" id="swSD"></span><span id="lgSD"></span></span>
+          <span><span class="sw" id="swAccL"></span><span id="lgAcc"></span></span>
           <span><span class="sw" style="background:#FAEEDA;border:1px solid #BA7517;"></span>Depletion region</span>
-          <span><span class="sw" style="background:#E24B4A;"></span><span id="lgInv"></span></span>
+          <span><span class="sw" id="swInvL"></span><span id="lgInv"></span></span>
           <span><span class="sw" style="background:#5BB8F0;border:1px solid #0C447C;"></span>SiO₂</span>
           <span><span class="sw" style="background:#F59A23;border:1px solid #854F0B;"></span>Gate</span>
           <span><span class="sw" style="background:#888780;"></span>Electrode</span>
@@ -406,6 +406,9 @@ function syncControls(){
   $('lgSD').textContent=(n?'n⁺':'p⁺')+' source and drain';
   $('lgAcc').textContent='Accumulation layer ('+(n?'holes':'electrons')+')';
   $('lgInv').textContent='Inversion channel ('+(n?'electrons':'holes')+')';
+  const LB='background:#B5D4F4;border:1px solid #185FA5;',LR='background:#F7C1C1;border:1px solid #A32D2D;';
+  $('swSub').style.cssText=n?LB:LR;$('swSD').style.cssText=n?LR:LB;
+  $('swAccL').style.background=n?'#185FA5':'#E24B4A';$('swInvL').style.background=n?'#E24B4A':'#185FA5';
   $('famLab').innerHTML='V<sub>GS</sub> = '+(n?'1 to 5 V':'−1 to −5 V');
   document.querySelectorAll('.pmosNote').forEach(e=>e.style.display=n?'none':'');
 }
@@ -519,7 +522,11 @@ function render(){
   dep.m.visible=xd>0.002;if(dep.m.visible)place(dep,0,H-CT-xd/2,0,L,xd,W);
   subOut.scale.set(SL,H,W);subOut.position.set(0,H/2,0);
   const cy=H-CT/2;
-  chA.m.material.color.setHex(ss.s==='accumulation'?0x185FA5:ss.s==='weak'?0xF4B4B4:0xE24B4A);
+  const SUBc=n?0xB5D4F4:0xF7C1C1,SDc=n?0xF7C1C1:0xB5D4F4;
+  [subBot,subMid,chB].forEach(p=>p.m.material.color.setHex(SUBc));
+  [src,drn].forEach(p=>{p.m.material.color.setHex(SDc);p.e.material.color.setHex(n?C.sdEdge:C.subEdge);});
+  subOut.material.color.setHex(n?C.subEdge:C.sdEdge);
+  chA.m.material.color.setHex(ss.s==='accumulation'?(n?0x185FA5:0xE24B4A):ss.s==='weak'?(n?0xF4B4B4:0x85B7EB):(n?0xE24B4A:0x185FA5));
   if(st.reg==='cutoff'){if(ss.s==='accumulation'||ss.s==='weak'){chA.m.visible=true;chB.m.visible=false;place(chA,0,cy,0,L,CT,W);}else{chA.m.visible=false;chB.m.visible=true;place(chB,0,cy,0,L,CT,W);}}
   else if(st.reg==='linear'){chA.m.visible=true;chB.m.visible=false;place(chA,0,cy,0,L,CT,W);}
   else{const f=0.75,dir=st.sw?-1:1;chA.m.visible=true;chB.m.visible=true;place(chA,dir*(-L/2+f*L/2),cy,0,f*L,CT,W);place(chB,dir*(L/2-(1-f)*L/2),cy,0,(1-f)*L,CT,W);}
@@ -664,7 +671,7 @@ function drawVert(){
   let o='<defs><clipPath id="cpv"><rect x="58" y="'+Y0+'" width="'+(SX1-58)+'" height="'+(Y1-Y0)+'"/></clipPath>'+arrowDefs('ahv')+'</defs>';
   o+='<rect x="'+GX0+'" y="'+Y0+'" width="'+(GX1-GX0)+'" height="'+(Y1-Y0)+'" fill="#F59A23" fill-opacity="0.14"/>';
   o+='<rect x="'+GX1+'" y="'+Y0+'" width="'+(OX1-GX1)+'" height="'+(Y1-Y0)+'" fill="#5BB8F0" fill-opacity="0.16"/>';
-  o+='<rect x="'+OX1+'" y="'+Y0+'" width="'+(SX1-OX1)+'" height="'+(Y1-Y0)+'" fill="#B5D4F4" fill-opacity="0.25"/>';
+  o+='<rect x="'+OX1+'" y="'+Y0+'" width="'+(SX1-OX1)+'" height="'+(Y1-Y0)+'" fill="'+(n?'#B5D4F4':'#F7C1C1')+'" fill-opacity="0.25"/>';
   if(Wd>0){const wx=Math.min(sx(Wd),SX1);o+='<rect x="'+OX1+'" y="'+Y0+'" width="'+(wx-OX1).toFixed(1)+'" height="'+(Y1-Y0)+'" fill="#EF9F27" fill-opacity="0.16"/>'+L_(wx,Y0,wx,Y1,'#BA7517',1,'3 4')+tx(wx+4,Y1-6,sub('W','d'),{fs:11,c:'var(--ink-2)'});}
   for(let e=Math.ceil(bot);e<=Math.floor(top);e++)o+=L_(58,y(e),SX1,y(e),'var(--line)',0.6)+tx(52,y(e)+4,String(e),{fs:11,c:'var(--ink-3)',a:'end'});
   o+='<text transform="translate(16 '+((Y0+Y1)/2)+') rotate(-90)" text-anchor="middle" font-size="11" fill="var(--ink-3)">Energy (eV)</text>';
@@ -683,9 +690,10 @@ function drawVert(){
   const cx=[0,1,2,3,4,5].map(i=>OX1+6+i*9),cx3=[0,1,2].map(i=>OX1+6+i*12);
   const ecS=y(EcB-ps)-5,evS=y(EvB-ps)+5;
   const vs=psE<0?'acc':psE<pF?'dep':psE<2*pF*0.98?'weak':'strong';
-  if(vs==='strong')o+=n?carriers(cx,ecS,true,'#E24B4A'):carriers(cx,evS,false,'#E24B4A');
-  if(vs==='weak')o+=n?carriers(cx3,ecS,true,'#E24B4A',0.45):carriers(cx3,evS,false,'#E24B4A',0.45);
-  if(psE<-0.02)o+=n?carriers(cx,evS,false,'#185FA5'):carriers(cx,ecS,true,'#185FA5');
+  const invC=n?'#E24B4A':'#185FA5',accC=n?'#185FA5':'#E24B4A';
+  if(vs==='strong')o+=n?carriers(cx,ecS,true,invC):carriers(cx,evS,false,invC);
+  if(vs==='weak')o+=n?carriers(cx3,ecS,true,invC,0.45):carriers(cx3,evS,false,invC,0.45);
+  if(psE<-0.02)o+=n?carriers(cx,evS,false,accC):carriers(cx,ecS,true,accC);
   if(Math.abs(vgb)>0.15)o+=L_(GX0+30,y(0),GX0+30,y(EFm),'var(--ink-2)',1.2,null,' marker-start="url(#ahv)" marker-end="url(#ahv)"')+tx(GX0+36,(y(0)+y(EFm))/2+4,sub('qV','G'),{c:'var(--ink-2)'});
   if(Math.abs(ps)>0.1){const ax=OX1+70;o+=L_(OX1,y(EiB),ax+30,y(EiB),'var(--ink-3)',1,'2 3')+L_(ax,y(EiB),ax,y(EiB-ps),'var(--ink-2)',1.2,null,' marker-start="url(#ahv)" marker-end="url(#ahv)"')+tx(ax+6,(y(EiB)+y(EiB-ps))/2+4,'qψ<tspan font-size="9" dy="3">s</tspan>',{c:'var(--ink-2)'});}
   o+='</g>';
@@ -739,9 +747,10 @@ function drawLat(){
   let o='<defs><clipPath id="cpl"><rect x="'+X0+'" y="'+Y0+'" width="'+(X1-X0)+'" height="'+(Y1-Y0)+'"/></clipPath>'+arrowDefs('ahl')+'</defs>';
   const xa=xp(0),xb=xp(1),xc=xp(2),xd_=xp(3);
   const r1=[Math.min(xa,xb),Math.abs(xb-xa)],r3=[Math.min(xc,xd_),Math.abs(xd_-xc)];
-  o+='<rect x="'+r1[0]+'" y="'+Y0+'" width="'+r1[1]+'" height="'+(Y1-Y0)+'" fill="#F7C1C1" fill-opacity="0.28"/>';
-  o+='<rect x="'+Math.min(xb,xc)+'" y="'+Y0+'" width="'+Math.abs(xc-xb)+'" height="'+(Y1-Y0)+'" fill="#B5D4F4" fill-opacity="0.25"/>';
-  o+='<rect x="'+r3[0]+'" y="'+Y0+'" width="'+r3[1]+'" height="'+(Y1-Y0)+'" fill="#F7C1C1" fill-opacity="0.28"/>';
+  const sdF=n?'#F7C1C1':'#B5D4F4',chF=n?'#B5D4F4':'#F7C1C1';
+  o+='<rect x="'+r1[0]+'" y="'+Y0+'" width="'+r1[1]+'" height="'+(Y1-Y0)+'" fill="'+sdF+'" fill-opacity="0.28"/>';
+  o+='<rect x="'+Math.min(xb,xc)+'" y="'+Y0+'" width="'+Math.abs(xc-xb)+'" height="'+(Y1-Y0)+'" fill="'+chF+'" fill-opacity="0.25"/>';
+  o+='<rect x="'+r3[0]+'" y="'+Y0+'" width="'+r3[1]+'" height="'+(Y1-Y0)+'" fill="'+sdF+'" fill-opacity="0.28"/>';
   for(let E=Math.ceil(bot);E<=Math.floor(top);E++)o+=L_(X0,y(E),X1,y(E),'var(--line)',0.6)+tx(X0-6,y(E)+4,String(E),{fs:11,c:'var(--ink-3)',a:'end'});
   o+='<text transform="translate(16 '+((Y0+Y1)/2)+') rotate(-90)" text-anchor="middle" font-size="11" fill="var(--ink-3)">Energy (eV)</text>';
   const sd=n?'n⁺':'p⁺';
