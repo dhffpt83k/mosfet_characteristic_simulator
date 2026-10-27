@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MOSFET device explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=STIX+Two+Text:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#F3F6F9;--surface:#FFFFFF;--surface-2:#EDF1F5;--ink:#17212B;--ink-2:#4A5866;--ink-3:#7A8794;--line:#D6DEE6;
+  --accent:#2463D6;--accent-bg:#E3ECFB;--ok:#1C7348;--ok-bg:#DDF2E6;--muted-bg:#E6EBF0;--danger:#B42323;
+  --warn:#8A5A00;--warn-bg:#FBEFD6;--inv:#B42323;--inv-bg:#FBE3E3;--winv:#993556;--winv-bg:#FBEAF0;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0F151B;--surface:#172029;--surface-2:#1E2934;--ink:#E6EDF3;--ink-2:#A8B5C2;--ink-3:#7C8A98;--line:#2B3743;
+    --accent:#6EA1F5;--accent-bg:#1C2E4A;--ok:#5CCB93;--ok-bg:#163326;--muted-bg:#24303B;--danger:#F08A8A;
+    --warn:#F2C26B;--warn-bg:#3A2C10;--inv:#F29A9A;--inv-bg:#3D1C1C;--winv:#ED93B1;--winv-bg:#3A1A27;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F151B;--surface:#172029;--surface-2:#1E2934;--ink:#E6EDF3;--ink-2:#A8B5C2;--ink-3:#7C8A98;--line:#2B3743;
+  --accent:#6EA1F5;--accent-bg:#1C2E4A;--ok:#5CCB93;--ok-bg:#163326;--muted-bg:#24303B;--danger:#F08A8A;
+  --warn:#F2C26B;--warn-bg:#3A2C10;--inv:#F29A9A;--inv-bg:#3D1C1C;--winv:#ED93B1;--winv-bg:#3A1A27;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--bg);}
+*,*::before,*::after{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px;line-height:1.55;}
+.wrap{max-width:1240px;margin:0 auto;padding:28px max(20px,env(safe-area-inset-right,0px)) 48px max(20px,env(safe-area-inset-left,0px));}
+header h1{font-size:28px;font-weight:600;letter-spacing:-0.01em;margin:0 0 4px;}
+header p{margin:0;color:var(--ink-2);max-width:72ch;}
+.layout{display:grid;grid-template-columns:340px minmax(0,1fr);gap:24px;margin-top:24px;align-items:start;}
+aside{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 18px 12px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);max-height:calc(100vh - 32px);overflow:auto;}
+fieldset{border:0;margin:0 0 16px;padding:0;min-width:0;}
+legend{font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:8px;padding:0;}
+.ctl{margin-bottom:12px;}
+.ctl .top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.ctl label{font-size:14px;}
+.num{display:flex;align-items:center;gap:6px;}
+.num span{font-size:12.5px;color:var(--ink-3);min-width:54px;}
+input[type=number]{font:inherit;font-size:14px;width:88px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--ink);text-align:right;font-variant-numeric:tabular-nums;}
+input[type=range]{width:100%;accent-color:var(--accent);margin:6px 0 0;}
+input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.err{font-size:12.5px;color:var(--danger);}
+.err:not(:empty){margin-top:2px;}
+.seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;}
+.seg label{flex:1;text-align:center;font-size:13.5px;padding:7px 4px;cursor:pointer;color:var(--ink-2);position:relative;}
+.seg label + label{border-left:1px solid var(--line);}
+.seg input{position:absolute;opacity:0;pointer-events:none;}
+.seg label:has(input:checked){background:var(--accent-bg);color:var(--accent);font-weight:600;}
+.seg label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:-2px;}
+.kv{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:14px;margin-top:6px;}
+.gwrap{position:relative;}
+.gzone{display:flex;height:12px;margin:4px 8px 0;border-radius:3px;overflow:hidden;}
+.gzone div{height:100%;}
+.gmkw{position:absolute;top:0;bottom:0;left:8px;right:8px;pointer-events:none;}
+.gmk{position:absolute;top:0;bottom:0;border-left:1.5px dashed var(--ink-2);}
+.glab{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:12px;color:var(--ink-2);margin-top:5px;}
+.glab .sw{width:9px;height:9px;margin-right:4px;}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-2);}
+button{font:inherit;font-size:14px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;}
+button:hover{background:var(--surface-2);}
+.stage{display:flex;flex-direction:column;gap:20px;min-width:0;}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
+#view{width:100%;height:460px;cursor:grab;touch-action:none;border-radius:10px;background:var(--surface-2);overflow:hidden;}
+.hint{font-size:13px;color:var(--ink-3);margin-top:8px;}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--ink-2);margin-top:10px;}
+.sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px;}
+h2{font-size:18px;font-weight:600;margin:0 0 12px;}
+.state{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+.m{background:var(--surface-2);border-radius:10px;padding:10px 12px;}
+.m .l{font-size:12.5px;color:var(--ink-2);}
+.m .v{font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;}
+.badge{display:inline-block;margin-top:4px;font-size:14px;font-weight:600;padding:3px 10px;border-radius:999px;}
+.para{font-size:14px;color:var(--ink-2);margin:12px 0 0;max-width:80ch;}
+.para + .para{margin-top:6px;}
+.cg{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:18px;align-items:start;}
+.chart{position:relative;height:300px;}
+.fx{background:var(--surface-2);border-radius:10px;padding:12px 14px;}
+.fx .h{font-size:12.5px;color:var(--ink-2);margin-top:10px;}
+.fx .h:first-child{margin-top:0;}
+.fx .pn{font-size:13px;color:var(--ink-2);margin-top:10px;padding-top:8px;border-top:1px solid var(--line);}
+.eq{font-family:"STIX Two Text","Cambria Math",Cambria,"Times New Roman",serif;font-size:16.5px;line-height:1.5;}
+.val{font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:13.5px;font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums;}
+.note{font-size:13.5px;color:var(--ink-2);margin:0;max-width:80ch;}
+.note + .note{margin-top:6px;}
+svg.ebd{width:100%;height:auto;display:block;}
+@media (max-width:960px){.layout{grid-template-columns:minmax(0,1fr);}aside{position:static;max-height:none;}}
+@media (max-width:720px){.cg{grid-template-columns:minmax(0,1fr);}.state{grid-template-columns:repeat(2,minmax(0,1fr));}#view{height:360px;}header h1{font-size:24px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>MOSFET device explorer</h1>
+    <p>Choose NMOS or PMOS and a gate material, set geometry, doping and terminal voltages, then watch the structure, operating region, I–V curves and both energy band diagrams update together.</p>
+  </header>
+
+  <div class="layout">
+    <aside aria-label="Device parameters">
+      <fieldset>
+        <legend>Device</legend>
+        <div class="seg" role="radiogroup" aria-label="Device type">
+          <label><input type="radio" name="dt" value="n">NMOS</label>
+          <label><input type="radio" name="dt" value="p">PMOS</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Gate material</legend>
+        <div class="seg" role="radiogroup" aria-label="Gate material">
+          <label><input type="radio" name="gm" value="npoly">n⁺ poly-Si</label>
+          <label><input type="radio" name="gm" value="ppoly">p⁺ poly-Si</label>
+          <label><input type="radio" name="gm" value="metal">Metal</label>
+        </div>
+        <div id="pmRow" style="margin-top:10px;"></div>
+        <div class="kv"><span>Work function φ<sub>m</sub></span><span class="val" id="pmD"></span></div>
+        <div class="kv"><span>Flat-band voltage V<sub>FB</sub></span><span class="val" id="vfbD"></span></div>
+      </fieldset>
+      <div id="ctrl"></div>
+      <fieldset>
+        <legend>View</legend>
+        <label class="chk"><input type="checkbox" id="ex" checked> Draw oxide 10× thicker (visual only)</label>
+      </fieldset>
+      <button type="button" id="reset">Reset to defaults</button>
+    </aside>
+
+    <div class="stage">
+      <section class="card" aria-label="3D structure">
+        <div id="view" role="img" aria-label="3D model of the transistor"></div>
+        <div class="hint">Drag to rotate.</div>
+        <div class="legend">
+          <span><span class="sw" style="background:#B5D4F4;border:1px solid #185FA5;"></span><span id="lgSub"></span></span>
+          <span><span class="sw" style="background:#F7C1C1;border:1px solid #A32D2D;"></span><span id="lgSD"></span></span>
+          <span><span class="sw" style="background:#185FA5;"></span><span id="lgAcc"></span></span>
+          <span><span class="sw" style="background:#FAEEDA;border:1px solid #BA7517;"></span>Depletion region</span>
+          <span><span class="sw" style="background:#E24B4A;"></span><span id="lgInv"></span></span>
+          <span><span class="sw" style="background:#5BB8F0;border:1px solid #0C447C;"></span>SiO₂</span>
+          <span><span class="sw" style="background:#F59A23;border:1px solid #854F0B;"></span>Gate</span>
+          <span><span class="sw" style="background:#888780;"></span>Electrode</span>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Present state">
+        <h2>Present state</h2>
+        <div class="state">
+          <div class="m"><div class="l">Channel surface</div><div class="badge" id="surf"></div></div>
+          <div class="m"><div class="l">Operating region</div><div class="badge" id="reg"></div></div>
+          <div class="m"><div class="l">I<sub>D</sub></div><div class="v" id="idv"></div></div>
+          <div class="m"><div class="l">V<sub>GS</sub></div><div class="v" id="vgs"></div></div>
+          <div class="m"><div class="l">V<sub>DS</sub></div><div class="v" id="vds"></div></div>
+          <div class="m"><div class="l">V<sub>GS</sub> − V<sub>th</sub></div><div class="v" id="vov"></div></div>
+        </div>
+        <p class="para" id="scond"></p>
+        <p class="para" id="cond"></p>
+      </section>
+
+      <section class="card" aria-label="Transfer curve">
+        <h2>Transfer curve: I<sub>D</sub> vs V<sub>GS</sub></h2>
+        <div class="cg">
+          <div class="chart"><canvas id="ct" aria-label="Drain current versus gate-source voltage"></canvas></div>
+          <div class="fx">
+            <div class="h">Subthreshold, V<sub>GS</sub> ≤ V<sub>th</sub></div>
+            <div class="eq"><i>I</i><sub>D</sub> ≈ 2<i>nk</i>(<i>kT</i>/<i>q</i>)² e<sup>(<i>V</i><sub>GS</sub> − <i>V</i><sub>th</sub>)/(<i>nkT</i>/<i>q</i>)</sup></div>
+            <div class="h">Linear, V<sub>DS</sub> &lt; V<sub>GS</sub> − V<sub>th</sub></div>
+            <div class="eq"><i>I</i><sub>D</sub> = <i>k</i>[(<i>V</i><sub>GS</sub> − <i>V</i><sub>th</sub>)<i>V</i><sub>DS</sub> − ½<i>V</i><sub>DS</sub>²]</div>
+            <div class="h">Saturation, V<sub>DS</sub> ≥ V<sub>GS</sub> − V<sub>th</sub></div>
+            <div class="eq"><i>I</i><sub>D</sub> = ½<i>k</i>(<i>V</i><sub>GS</sub> − <i>V</i><sub>th</sub>)²(1 + λ<i>V</i><sub>DS</sub>)</div>
+            <div class="h">Device constant</div>
+            <div class="eq"><i>k</i> = μ<i>C</i><sub>ox</sub>(<i>W</i>/<i>L</i>) = <span class="val" id="kv"></span></div>
+            <div class="eq"><i>C</i><sub>ox</sub> = ε<sub>ox</sub>/<i>t</i><sub>ox</sub> = <span class="val" id="coxv"></span></div>
+            <div class="h">Curve drawn at V<sub>DS</sub> = <span class="val" id="tvd"></span></div>
+            <div class="pn pmosNote">PMOS: the same equations apply with V<sub>SG</sub>, V<sub>SD</sub>, |V<sub>th</sub>| and μ<sub>p</sub>. The plotted current is −I<sub>D</sub>, which flows from source to drain.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Subthreshold characteristics">
+        <h2>Subthreshold: log I<sub>D</sub> vs V<sub>GS</sub></h2>
+        <div class="cg">
+          <div>
+            <div class="chart"><canvas id="cl" aria-label="Drain current on a log scale versus gate-source voltage"></canvas></div>
+            <div class="legend">
+              <span><span class="sw" id="swLog"></span>Present V<sub>DS</sub></span>
+              <span><span class="sw" style="background:#E0A030;"></span>Exponential asymptote (slope 1/SS)</span>
+              <span><span class="sw" style="background:transparent;border:1.5px dashed #E24B4A;"></span>V<sub>th</sub></span>
+              <span><span class="sw" style="background:#E24B4A;border-radius:50%;"></span>Operating point</span>
+            </div>
+            <p class="note" id="logNote" style="margin-top:8px;"></p>
+          </div>
+          <div class="fx">
+            <div class="h">Subthreshold current (V<sub>DS</sub> ≫ kT/q)</div>
+            <div class="eq"><i>I</i><sub>D</sub> ≈ 2<i>nk</i>(<i>kT</i>/<i>q</i>)² exp[(<i>V</i><sub>GS</sub> − <i>V</i><sub>th</sub>)/(<i>n kT</i>/<i>q</i>)]</div>
+            <div class="h">Body factor</div>
+            <div class="eq"><i>n</i> = 1 + <i>C</i><sub>dep</sub>/<i>C</i><sub>ox</sub> = <span class="val" id="nV"></span></div>
+            <div class="eq"><i>C</i><sub>dep</sub> = ε<sub>s</sub>/<i>W</i><sub>d,max</sub> = <span class="val" id="cdepV"></span></div>
+            <div class="h">Subthreshold swing</div>
+            <div class="eq">SS = ln10 · <i>n</i> · <i>kT</i>/<i>q</i> = <span class="val" id="ssV"></span></div>
+            <div class="eq">Ideal limit (<i>n</i> = 1): <span class="val">59.5 mV/dec</span> at 300 K</div>
+            <div class="h">On and off current at present V<sub>DS</sub></div>
+            <div class="eq"><i>I</i><sub>off</sub> (V<sub>GS</sub> = 0) = <span class="val" id="ioffV"></span></div>
+            <div class="eq"><i>I</i><sub>on</sub> (|V<sub>GS</sub>| = 5 V) = <span class="val" id="ionV"></span></div>
+            <div class="eq"><i>I</i><sub>on</sub>/<i>I</i><sub>off</sub> = <span class="val" id="ratioV"></span></div>
+            <div class="pn">Above threshold the curves blend into the square law: every I–V curve uses V<sub>eff</sub> = 2n(kT/q) ln[1 + e<sup>(V<sub>GS</sub> − V<sub>th</sub>)/(2nkT/q)</sup>] in place of V<sub>GS</sub> − V<sub>th</sub>.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Output curve">
+        <h2>Output curve: I<sub>D</sub> vs V<sub>DS</sub></h2>
+        <div class="cg">
+          <div>
+            <div class="chart"><canvas id="co" aria-label="Drain current versus drain-source voltage"></canvas></div>
+            <div class="legend">
+              <span><span class="sw" id="swAcc"></span>Present V<sub>GS</sub></span>
+              <span><span class="sw" id="swFam"></span><span id="famLab"></span></span>
+              <span><span class="sw" style="background:#E0A030;"></span>Saturation edge</span>
+              <span><span class="sw" style="background:#E24B4A;border-radius:50%;"></span>Operating point</span>
+            </div>
+          </div>
+          <div class="fx">
+            <div class="h">Saturation edge (pinch-off)</div>
+            <div class="eq"><i>V</i><sub>DS,sat</sub> = <i>V</i><sub>GS</sub> − <i>V</i><sub>th</sub> = <span class="val" id="vsat"></span></div>
+            <div class="eq"><i>I</i><sub>D</sub> = ½<i>k</i><i>V</i><sub>DS,sat</sub>²</div>
+            <div class="h">Saturation current</div>
+            <div class="eq"><i>I</i><sub>D,sat</sub> = <span class="val" id="isat"></span></div>
+            <div class="h">Output resistance</div>
+            <div class="eq"><i>r</i><sub>o</sub> ≈ 1/(λ|<i>I</i><sub>D</sub>|) = <span class="val" id="ro"></span></div>
+            <div class="h">Transconductance in saturation</div>
+            <div class="eq"><i>g</i><sub>m</sub> = <i>k</i>|<i>V</i><sub>GS</sub> − <i>V</i><sub>th</sub>| = <span class="val" id="gm"></span></div>
+            <div class="pn pmosNote">PMOS: curves are mirrored to negative V<sub>DS</sub>, and the plotted current is −I<sub>D</sub>.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Vertical energy band diagram">
+        <h2>Energy band diagram: gate, oxide, substrate</h2>
+        <div class="cg">
+          <div>
+            <svg id="ebd" class="ebd" viewBox="0 0 740 420" role="img" aria-label="Energy band diagram through the gate, oxide and silicon"></svg>
+            <p class="note" id="ebdNote" style="margin-top:8px;"></p>
+            <p class="note">Drawn vertically through the channel at the gate-to-body bias (body at 0 V), with source and drain at body potential, so V<sub>S</sub> and V<sub>D</sub> do not change it. Silicon depth is to scale; the oxide is drawn wider than scale. Energies are relative to the body Fermi level E<sub>F</sub> = 0.</p>
+          </div>
+          <div class="fx">
+            <div class="h">Gate and flat band</div>
+            <div class="eq">φ<sub>m</sub> = <span class="val" id="pmV"></span></div>
+            <div class="eq" id="phisEq"></div>
+            <div class="eq"><i>V</i><sub>FB</sub> = φ<sub>m</sub> − φ<sub>s</sub> = <span class="val" id="vfbV"></span></div>
+            <div class="h">Substrate doping</div>
+            <div class="eq"><span id="naLab"></span> = <span class="val" id="naV"></span></div>
+            <div class="eq">φ<sub>F</sub> = (<i>kT</i>/<i>q</i>) ln(<i>N</i>/<i>n</i><sub>i</sub>) = <span class="val" id="pfV"></span></div>
+            <div class="h">Threshold condition</div>
+            <div class="eq" id="vtEq"></div>
+            <div class="eq">γ = √(2<i>q</i>ε<sub>s</sub><i>N</i>) / <i>C</i><sub>ox</sub></div>
+            <div class="h">Weak inversion onset (|ψ<sub>s</sub>| = φ<sub>F</sub>)</div>
+            <div class="eq" id="vmgEq"></div>
+            <div class="h">Voltage balance</div>
+            <div class="eq"><i>V</i><sub>G</sub> − <i>V</i><sub>FB</sub> = ψ<sub>s</sub> + <i>V</i><sub>ox</sub></div>
+            <div class="eq">ψ<sub>s</sub> = <span class="val" id="psV"></span></div>
+            <div class="eq"><i>V</i><sub>ox</sub> = <span class="val" id="voxV"></span></div>
+            <div class="h">Depletion width</div>
+            <div class="eq"><i>W</i><sub>d</sub> = √(2ε<sub>s</sub>|ψ<sub>s</sub>| / <i>qN</i>) = <span class="val" id="wdV"></span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Capacitance-voltage curve">
+        <h2>Gate capacitance: C–V curve</h2>
+        <div class="cg">
+          <div>
+            <div class="chart"><canvas id="cc" aria-label="Gate capacitance normalized to Cox versus gate voltage"></canvas></div>
+            <div class="legend">
+              <span><span class="sw" id="swLF"></span>Low frequency</span>
+              <span><span class="sw" style="background:#D4537E;"></span>High frequency</span>
+              <span><span class="sw" style="background:transparent;border:1.5px dashed var(--ink-3);"></span>V<sub>FB</sub></span>
+              <span><span class="sw" style="background:transparent;border:1.5px dashed #E24B4A;"></span>V<sub>th</sub></span>
+              <span><span class="sw" style="background:#E24B4A;border-radius:50%;"></span>Present V<sub>G</sub></span>
+            </div>
+            <p class="note" style="margin-top:8px;">At low frequency the inversion carriers follow the AC signal, so C climbs back to C<sub>ox</sub> in strong inversion. At high frequency they cannot, so C stays at the minimum set by the maximum depletion width. In a MOSFET, the source and drain supply inversion carriers, so the measured gate capacitance follows the low-frequency curve; the high-frequency curve is what an isolated MOS capacitor shows.</p>
+            <p class="note">Drawn at the gate-to-body bias with source and drain at 0 V. Values in fF are for the gate area W × L.</p>
+          </div>
+          <div class="fx">
+            <div class="h">Series combination</div>
+            <div class="eq">1/<i>C</i> = 1/<i>C</i><sub>ox</sub> + 1/<i>C</i><sub>s</sub>,  <i>C</i><sub>s</sub> = d<i>Q</i><sub>s</sub>/dψ<sub>s</sub></div>
+            <div class="eq"><i>C</i><sub>ox</sub> = <span class="val" id="cvCox"></span></div>
+            <div class="h">Flat band</div>
+            <div class="eq"><i>C</i><sub>s</sub> = ε<sub>s</sub>/<i>L</i><sub>D</sub>,  <i>L</i><sub>D</sub> = √(ε<sub>s</sub><i>kT</i>/<i>q</i>²<i>N</i>) = <span class="val" id="cvLD"></span></div>
+            <div class="eq"><i>C</i><sub>FB</sub> = <span class="val" id="cvFB"></span></div>
+            <div class="h">High-frequency minimum</div>
+            <div class="eq"><i>W</i><sub>d,max</sub> = √(2ε<sub>s</sub>·2φ<sub>F</sub>/<i>qN</i>) = <span class="val" id="cvWm"></span></div>
+            <div class="eq"><i>C</i><sub>min</sub> = <i>C</i><sub>ox</sub> / (1 + <i>C</i><sub>ox</sub><i>W</i><sub>d,max</sub>/ε<sub>s</sub>) = <span class="val" id="cvMin"></span></div>
+            <div class="h">At V<sub>G</sub> = <span class="val" id="cvVg"></span></div>
+            <div class="eq"><span class="val" id="cvNow"></span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Lateral energy band diagram">
+        <h2>Energy band diagram: source, channel, drain</h2>
+        <div class="cg">
+          <div>
+            <svg id="lat" class="ebd" viewBox="0 0 740 400" role="img" aria-label="Energy band diagram along the surface from source through the channel to drain"></svg>
+            <p class="note" id="latNote" style="margin-top:8px;"></p>
+            <p class="note">Drawn along the silicon surface from source to drain, with energies relative to the source Fermi level. The body is treated as sitting at the source potential (no body effect), matching the V<sub>th</sub> model.</p>
+          </div>
+          <div class="fx">
+            <div class="h">Fermi level split</div>
+            <div class="eq"><i>E</i><sub>F,S</sub> − <i>E</i><sub>F,D</sub> = <i>qV</i><sub>DS</sub></div>
+            <div class="h">Surface potential along the channel</div>
+            <div class="eq">ψ<sub>s</sub>(<i>y</i>) = min[ψ<sub>s,dep</sub>, 2φ<sub>F</sub> + <i>V</i><sub>c</sub>(<i>y</i>)]</div>
+            <div class="h">Channel voltage (gradual channel)</div>
+            <div class="eq">(<i>V</i><sub>GS</sub> − <i>V</i><sub>th</sub>)<i>V</i><sub>c</sub> − ½<i>V</i><sub>c</sub>² = (<i>y</i>/<i>L</i>)[(<i>V</i><sub>GS</sub> − <i>V</i><sub>th</sub>)<i>V</i><sub>DS</sub> − ½<i>V</i><sub>DS</sub>²]</div>
+            <div class="h">Present values</div>
+            <div class="eq"><span id="barLab"></span> = <span class="val" id="barV"></span></div>
+            <div class="eq">ψ<sub>s</sub> at source end = <span class="val" id="ps0V"></span></div>
+            <div class="eq">ψ<sub>s</sub> at drain end = <span class="val" id="psLV"></span></div>
+            <div class="eq">Pinch-off: <span class="val" id="pinchV"></span></div>
+            <div class="pn pmosNote">PMOS: all signs flip. The diagram is the mirror image, and holes see the barrier in the valence band.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Model assumptions">
+        <h2>Model assumptions</h2>
+        <p class="note">Long-channel square-law model with constant mobility, smoothly extended into subthreshold through V<sub>eff</sub>. The body is held at 0 V and the body effect is ignored. V<sub>th</sub> is calculated from the gate work function, substrate doping and t<sub>ox</sub>, with no oxide charge and no poly-gate depletion. n⁺ and p⁺ poly gates are treated as degenerate, with φ<sub>m</sub> = χ and χ + E<sub>g</sub>/q.</p>
+        <p class="note">Below about L = 0.25 µm, real devices depart from the square law because of velocity saturation and other short-channel effects, so treat curves at the low end of the L range as idealized.</p>
+        <p class="note">The silicon is 3L long and 0.5 µm tall. Source and drain are each L × W × 0.2 µm. The gate is L × W × 0.2 µm. Switching between NMOS and PMOS mirrors every voltage and swaps n⁺ and p⁺ poly, so the PMOS is the exact complement of the NMOS.</p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+function isDark(){const t=document.documentElement.getAttribute('data-theme');if(t==='dark')return true;if(t==='light')return false;return matchMedia('(prefers-color-scheme: dark)').matches;}
+function pal(){const d=isDark();return{d,
+  subEdge:d?0x85B7EB:0x185FA5,sdEdge:d?0xF7C1C1:0xA32D2D,oxEdge:d?0xB5D4F4:0x0C447C,gEdge:d?0xFAC775:0x854F0B,
+  g1:d?0x3A4652:0xC2CCD6,g2:d?0x26313C:0xDCE3EA,
+  tc:d?'#A8B5C2':'#4A5866',gc:d?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.08)',
+  fam:d?'#4A5866':'#B7C0C9',acc:d?'#6EA1F5':'#2463D6',
+  lblBg:d?'#172029':'#FFFFFF',lblBd:d?'#3A4652':'#C2CCD6',lblTx:d?'#E6EDF3':'#17212B',ptBd:d?'#172029':'#FFFFFF'};}
+let C=pal();
+
+const q=1.602e-19,eps0=8.854e-14,es=11.7*eps0,ni=1e10,kT=0.02585,Eg=1.12,CHI=4.05;
+const P=[
+{k:'L',g:'Geometry',lab:'Channel length L',min:.15,max:1,st:.01,v:.5,d:2,u:'µm'},
+{k:'W',g:'Geometry',lab:'Width W',min:.5,max:1.5,st:.01,v:1,d:2,u:'µm'},
+{k:'T',g:'Geometry',lab:'Oxide thickness t<sub>ox</sub>',min:5,max:20,st:.1,v:10,d:1,u:'nm'},
+{k:'Na',g:'Material',lab:'Substrate doping',min:1e15,max:1e18,st:.01,v:1e17,d:2,u:'cm⁻³',log:true},
+{k:'Mu',g:'Material',lab:'Mobility',min:50,max:1400,st:10,v:500,d:0,u:'cm²/V·s'},
+{k:'Lm',g:'Material',lab:'Ch.-length mod. λ',min:0,max:.2,st:.005,v:0,d:3,u:'1/V'},
+{k:'Pm',g:'Gate',lab:'Metal work function φ<sub>m</sub>',min:3.5,max:5,st:.01,v:4.3,d:2,u:'eV'},
+{k:'G',g:'Bias',lab:'Gate V<sub>G</sub>',min:-5,max:5,st:.01,v:2,d:2,u:'V'},
+{k:'S',g:'Bias',lab:'Source V<sub>S</sub>',min:0,max:5,st:.01,v:0,d:2,u:'V'},
+{k:'D',g:'Bias',lab:'Drain V<sub>D</sub>',min:0,max:5,st:.01,v:1,d:2,u:'V'}];
+const PK={};P.forEach(p=>PK[p.k]=p);
+const V={};P.forEach(p=>V[p.k]=p.v);
+const U={type:'n',gm:'npoly'};
+const KEY='mosfet-explorer-v2';
+let savedEx=true;
+function setRanges(){['S','D'].forEach(k=>{PK[k].min=U.type==='n'?0:-5;PK[k].max=U.type==='n'?5:0;});}
+function clampAll(){P.forEach(p=>{V[p.k]=Math.min(p.max,Math.max(p.min,V[p.k]));});}
+try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s){if(s.type==='n'||s.type==='p')U.type=s.type;if(['npoly','ppoly','metal'].includes(s.gm))U.gm=s.gm;setRanges();
+  if(s.V)P.forEach(p=>{const v=+s.V[p.k];if(isFinite(v)&&v>=p.min&&v<=p.max)V[p.k]=v;});if(typeof s.ex==='boolean')savedEx=s.ex;}}catch(e){}
+setRanges();clampAll();
+function save(){try{localStorage.setItem(KEY,JSON.stringify({V,type:U.type,gm:U.gm,ex:$('ex').checked}));}catch(e){}}
+
+function toS(p,v){return p.log?Math.log10(v):v;}
+function fromS(p,s){return p.log?Math.pow(10,s):s;}
+function fv(p,v){return p.log?v.toExponential(p.d):v.toFixed(p.d);}
+function fr(p,v){return p.log?v.toExponential(0):String(v);}
+function ctlHTML(p){
+  const rng='<input type="range" id="'+p.k+'s" min="'+toS(p,p.min)+'" max="'+toS(p,p.max)+'" step="'+p.st+'" value="'+toS(p,V[p.k])+'" aria-label="'+p.lab.replace(/<[^>]+>/g,'')+' slider">';
+  let h='<div class="ctl"><div class="top"><label for="'+p.k+'n" id="lab-'+p.k+'">'+p.lab+'</label><div class="num"><input type="number" id="'+p.k+'n" min="'+p.min+'" max="'+p.max+'" step="'+(p.log?'any':p.st)+'" value="'+fv(p,V[p.k])+'"><span>'+p.u+'</span></div></div>'+
+    (p.k==='G'?'<div class="gwrap">'+rng+'<div class="gzone" id="gzone"></div><div class="gmkw" id="gmk"></div></div><div class="glab" id="glab"></div>':rng)+
+    '<div class="err" id="'+p.k+'e" aria-live="polite"></div></div>';
+  if(p.k==='Na')h+='<div class="kv" style="margin:-4px 0 12px;"><span>Threshold V<sub>th</sub> (calculated)</span><span class="val" id="vtD"></span></div>';
+  return h;
+}
+let h='',grp='';
+P.forEach(p=>{
+  if(p.g==='Gate'){$('pmRow').innerHTML=ctlHTML(p);return;}
+  if(p.g!==grp){if(grp)h+='</fieldset>';h+='<fieldset><legend>'+p.g+'</legend>';grp=p.g;}
+  h+=ctlHTML(p);
+});
+h+='</fieldset>';
+$('ctrl').innerHTML=h;
+$('ex').checked=savedEx;
+
+function syncControls(){
+  P.forEach(p=>{const sl=$(p.k+'s'),nb=$(p.k+'n');sl.min=toS(p,p.min);sl.max=toS(p,p.max);nb.min=p.min;nb.max=p.max;sl.value=toS(p,V[p.k]);nb.value=fv(p,V[p.k]);$(p.k+'e').textContent='';});
+  document.querySelectorAll('input[name=dt]').forEach(r=>r.checked=r.value===U.type);
+  document.querySelectorAll('input[name=gm]').forEach(r=>r.checked=r.value===U.gm);
+  $('pmRow').style.display=U.gm==='metal'?'':'none';
+  const n=U.type==='n';
+  $('lab-Na').innerHTML='Substrate doping N<sub>'+(n?'A':'D')+'</sub>';
+  $('lab-Mu').innerHTML='Mobility μ<sub>'+(n?'n':'p')+'</sub>';
+  $('lgSub').textContent=(n?'p-type':'n-type')+' Si substrate';
+  $('lgSD').textContent=(n?'n⁺':'p⁺')+' source and drain';
+  $('lgAcc').textContent='Accumulation layer ('+(n?'holes':'electrons')+')';
+  $('lgInv').textContent='Inversion channel ('+(n?'electrons':'holes')+')';
+  $('famLab').innerHTML='V<sub>GS</sub> = '+(n?'1 to 5 V':'−1 to −5 V');
+  document.querySelectorAll('.pmosNote').forEach(e=>e.style.display=n?'none':'');
+}
+
+/* ---------- physics ---------- */
+let Ph={};
+function sg(){return U.type==='n'?1:-1;}
+function cox(){return 3.9*eps0/(V.T*1e-7);}
+function phiF(N){return kT*Math.log(N/ni);}
+function phiM(){return U.gm==='npoly'?CHI:U.gm==='ppoly'?CHI+Eg:V.Pm;}
+function updPh(){
+  const s=sg(),pF=phiF(V.Na),g=Math.sqrt(2*q*es*V.Na)/cox(),phis=CHI+Eg/2+s*pF,vfb=phiM()-phis,VFBe=s*vfb;
+  Ph={s,pF,g,phis,vfb,VFBe,Vte:VFBe+2*pF+g*Math.sqrt(2*pF),Vmge:VFBe+pF+g*Math.sqrt(pF)};
+  Ph.n=1+(es/Math.sqrt(2*es*2*pF/(q*V.Na)))/cox();
+}
+function Ve(){const s=sg();return{G:s*V.G,S:s*V.S,D:s*V.D};}
+function K(){return V.Mu*cox()*V.W/V.L;}
+function veff(vov){const n=Ph.n,a=vov/(2*n*kT);return a>30?vov:2*n*kT*Math.log1p(Math.exp(a));}
+function idE(vgs,vds){if(vds<0)return -idE(vgs-vds,-vds);const ve=veff(vgs-Ph.Vte),k=K();return vds<ve?k*(ve*vds-vds*vds/2):0.5*k*ve*ve*(1+V.Lm*vds);}
+function fIs(a){const b=Math.abs(a);if(b===0)return '0 A';const u=[[1,'A'],[1e-3,'mA'],[1e-6,'µA'],[1e-9,'nA'],[1e-12,'pA'],[1e-15,'fA'],[1e-18,'aA']];for(const [m,nm] of u){if(b>=m)return (a/m).toFixed(b/m>=100?1:2)+' '+nm;}return a.toExponential(2)+' A';}
+function stateE(){const e=Ve();let vgs=e.G-e.S,vds=e.D-e.S,sw=false;if(vds<0){vgs=e.G-e.D;vds=-vds;sw=true;}const vov=vgs-Ph.Vte;let reg='cutoff';if(vov>0)reg=vds<vov?'linear':'saturation';return{reg,sw,vgs,vds,vov,e};}
+function surfE(){const st=stateE();if(st.e.G<Ph.VFBe)return{s:'accumulation',st};if(st.reg!=='cutoff')return{s:'strong',st};return{s:st.vgs<Ph.Vmge?'depletion':'weak',st};}
+function solvePsi(N,vg,vfb){const co=Math.sqrt(2*q*es*N*kT)/cox(),r=Math.pow(ni/N,2),t=vg-vfb;const g=p=>{const b=p/kT;const F=Math.sqrt(Math.max(0,Math.exp(-b)+b-1+r*(Math.exp(b)-b-1)));return p+Math.sign(p)*co*F-t;};let a=-1.2,b=1.6;for(let i=0;i<80;i++){const m=(a+b)/2;if(g(m)>0)b=m;else a=m;}return (a+b)/2;}
+function fI(a){const b=Math.abs(a);if(b===0)return '0 A';if(b<1e-3)return (a*1e6).toFixed(2)+' µA';return (a*1e3).toFixed(3)+' mA';}
+function fV(v,d){return (Math.abs(v)<5e-4?0:v).toFixed(d===undefined?2:d)+' V';}
+
+/* ---------- 3D ---------- */
+const el=$('view');
+const r=new THREE.WebGLRenderer({antialias:true,alpha:true});
+r.setPixelRatio(Math.min(window.devicePixelRatio,2));el.appendChild(r.domElement);
+const s3=new THREE.Scene();
+const cam=new THREE.PerspectiveCamera(35,1,0.01,100);
+s3.add(new THREE.AmbientLight(0xffffff,0.6));
+const dl=new THREE.DirectionalLight(0xffffff,0.7);dl.position.set(3,6,4);s3.add(dl);
+const unit=new THREE.BoxGeometry(1,1,1),ue=new THREE.EdgesGeometry(unit);
+function part(fill,edge){const m=new THREE.Mesh(unit,new THREE.MeshLambertMaterial({color:fill}));s3.add(m);let e=null;if(edge!==null){e=new THREE.LineSegments(ue,new THREE.LineBasicMaterial({color:edge}));s3.add(e);}return{m,e};}
+function place(p,x,y,z,sx,sy,sz){p.m.scale.set(sx,sy,sz);p.m.position.set(x,y,z);if(p.e){p.e.scale.set(sx,sy,sz);p.e.position.set(x,y,z);}}
+const SUB=0xB5D4F4;
+const subBot=part(SUB,null),subMid=part(SUB,null),dep=part(0xFAEEDA,null),chA=part(0xE24B4A,null),chB=part(SUB,null);
+const subOut=new THREE.LineSegments(ue,new THREE.LineBasicMaterial({color:C.subEdge}));s3.add(subOut);
+const src=part(0xF7C1C1,C.sdEdge),drn=part(0xF7C1C1,C.sdEdge);
+const ox=part(0x5BB8F0,C.oxEdge);
+const gate=part(0xF59A23,C.gEdge);
+let grid=null;
+function mkGrid(){if(grid)s3.remove(grid);grid=new THREE.GridHelper(4,40,C.g1,C.g2);s3.add(grid);}
+mkGrid();
+const metal=new THREE.MeshLambertMaterial({color:0x888780});
+const cyl=new THREE.CylinderGeometry(1,1,1,20),sph=new THREE.SphereGeometry(1,24,16);
+function rod(){const c=new THREE.Mesh(cyl,metal),k=new THREE.Mesh(sph,metal);s3.add(c);s3.add(k);return{set(x,y0,y1){c.scale.set(0.011,y1-y0,0.011);c.position.set(x,(y0+y1)/2,0);k.scale.set(0.032,0.032,0.032);k.position.set(x,y1,0);}};}
+const rS=rod(),rG=rod(),rD=rod();
+function label(){const c=document.createElement('canvas');c.width=320;c.height=96;const t=new THREE.CanvasTexture(c);const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false}));sp.renderOrder=10;s3.add(sp);
+  return{sp,set(txt){const g=c.getContext('2d');g.clearRect(0,0,320,96);g.fillStyle=C.lblBg;g.strokeStyle=C.lblBd;g.lineWidth=3;g.beginPath();if(g.roundRect)g.roundRect(4,4,312,88,16);else g.rect(4,4,312,88);g.fill();g.stroke();g.fillStyle=C.lblTx;g.font='600 40px "IBM Plex Sans", system-ui, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(txt,160,50);t.needsUpdate=true;}};}
+const lS=label(),lG=label(),lD=label();
+const H=0.5,D=0.2,GH=0.2,CT=0.03;
+let rx=0.4,ry=0.6,drag=false,px=0,py=0,dist=5;const ty=0.75;
+
+/* ---------- charts ---------- */
+Chart.defaults.font.family='"IBM Plex Sans", system-ui, sans-serif';
+function mk(id,xt){return new Chart($(id),{type:'scatter',data:{datasets:[]},options:{animation:false,responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{enabled:false}},
+  scales:{x:{type:'linear',min:0,max:5,title:{display:true,text:xt,color:C.tc},ticks:{color:C.tc},grid:{color:C.gc}},
+          y:{suggestedMin:0,title:{display:true,text:'',color:C.tc},ticks:{color:C.tc},grid:{color:C.gc}}}}});}
+const cT=mk('ct','VGS (V)'),cO=mk('co','VDS (V)'),cC=mk('cc','VG (V)');
+const cL=new Chart($('cl'),{type:'scatter',data:{datasets:[]},options:{animation:false,responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},
+  scales:{x:{type:'linear',title:{display:true,text:'VGS (V)',color:C.tc},ticks:{color:C.tc},grid:{color:C.gc}},
+          y:{type:'logarithmic',min:1e-15,title:{display:true,text:'',color:C.tc},ticks:{color:C.tc,callback:v=>{const e=Math.log10(v);return Math.abs(e-Math.round(e))<1e-6?'1e'+Math.round(e):'';}},grid:{color:C.gc}}}}});
+function ln(data,col,w,dash){return{data,showLine:true,pointRadius:0,borderColor:col,borderWidth:w,borderDash:dash||[]};}
+function pt(x,y){return{data:[{x,y}],pointRadius:6,pointBackgroundColor:'#E24B4A',pointBorderColor:C.ptBd,pointBorderWidth:2,showLine:false};}
+
+function applyTheme(){
+  C=pal();
+  subOut.material.color.setHex(C.subEdge);
+  [src,drn].forEach(p=>p.e.material.color.setHex(C.sdEdge));
+  ox.e.material.color.setHex(C.oxEdge);gate.e.material.color.setHex(C.gEdge);
+  mkGrid();
+  [cT,cO,cC,cL].forEach(c=>{['x','y'].forEach(a=>{c.options.scales[a].title.color=C.tc;c.options.scales[a].ticks.color=C.tc;c.options.scales[a].grid.color=C.gc;});});
+  $('swAcc').style.background=C.acc;$('swLF').style.background=C.acc;$('swLog').style.background=C.acc;$('swFam').style.background=C.fam;
+  render();
+}
+
+/* ---------- gate bar ---------- */
+function updGate(){
+  const s=Ph.s,e=Ve(),vref=Math.min(e.S,e.D),be=[Ph.VFBe,Ph.Vmge+vref,Ph.Vte+vref];
+  const col={acc:'var(--accent-bg)',dep:'var(--warn-bg)',weak:'var(--winv-bg)',strong:'var(--inv-bg)'};
+  const zones=[[-1e9,be[0],'acc'],[be[0],be[1],'dep'],[be[1],be[2],'weak'],[be[2],1e9,'strong']];
+  const segs=zones.map(z=>{let a=s*z[0],b=s*z[1];if(a>b){const t=a;a=b;b=t;}a=Math.max(-5,a);b=Math.min(5,b);return[a,b,col[z[2]]];}).filter(z=>z[1]>z[0]).sort((x,y)=>x[0]-y[0]);
+  $('gzone').innerHTML=segs.map(z=>'<div style="width:'+((z[1]-z[0])/10*100).toFixed(2)+'%;background:'+z[2]+';"></div>').join('');
+  const rb=be.map(x=>s*x);
+  $('gmk').innerHTML=rb.filter(x=>x>-5&&x<5).map(x=>'<div class="gmk" style="left:'+((x+5)/10*100).toFixed(2)+'%;"></div>').join('');
+  $('glab').innerHTML='<span><span class="sw" style="background:var(--accent-bg);border:1px solid var(--accent);"></span>Accumulation</span><span><span class="sw" style="background:var(--warn-bg);border:1px solid var(--warn);"></span>Depletion</span><span><span class="sw" style="background:var(--winv-bg);border:1px solid var(--winv);"></span>Weak inversion</span><span><span class="sw" style="background:var(--inv-bg);border:1px solid var(--inv);"></span>Strong inversion</span>'+
+    '<span>V<sub>FB</sub> = '+fV(rb[0])+'</span><span>V<sub>mg</sub> = '+fV(rb[1])+'</span><span>V<sub>th</sub> = '+fV(rb[2])+'</span>';
+  $('vtD').textContent=fV(s*Ph.Vte,3);
+  $('pmD').textContent=phiM().toFixed(2)+' eV';
+  $('vfbD').textContent=fV(Ph.vfb,3);
+}
+
+/* ---------- main render ---------- */
+function render(){
+  updPh();updGate();
+  const s=Ph.s,n=s>0;
+  const L=V.L,W=V.W,T=V.T,SL=3*L,tv=T/1000*($('ex').checked?10:1);
+  const st=stateE(),ss=surfE(),e=st.e,k=K();
+  const vgsE=e.G-e.S,vdsE=e.D-e.S,idEq=idE(vgsE,vdsE),idR=s*idEq;
+
+  const xdMax=0.12;let xd=0;
+  if(ss.s==='depletion'||ss.s==='weak'){const thr=(st.sw?e.D:e.S)+Ph.Vte;xd=xdMax*Math.sqrt(Math.min(1,Math.max(0,(e.G-Ph.VFBe)/(thr-Ph.VFBe))));}
+  else if(ss.s==='strong')xd=xdMax;
+  const midH=D-CT-xd;
+  place(subBot,0,(H-D)/2,0,SL,H-D,W);
+  place(subMid,0,H-D+midH/2,0,L,midH,W);
+  dep.m.visible=xd>0.002;if(dep.m.visible)place(dep,0,H-CT-xd/2,0,L,xd,W);
+  subOut.scale.set(SL,H,W);subOut.position.set(0,H/2,0);
+  const cy=H-CT/2;
+  chA.m.material.color.setHex(ss.s==='accumulation'?0x185FA5:ss.s==='weak'?0xF4B4B4:0xE24B4A);
+  if(st.reg==='cutoff'){if(ss.s==='accumulation'||ss.s==='weak'){chA.m.visible=true;chB.m.visible=false;place(chA,0,cy,0,L,CT,W);}else{chA.m.visible=false;chB.m.visible=true;place(chB,0,cy,0,L,CT,W);}}
+  else if(st.reg==='linear'){chA.m.visible=true;chB.m.visible=false;place(chA,0,cy,0,L,CT,W);}
+  else{const f=0.75,dir=st.sw?-1:1;chA.m.visible=true;chB.m.visible=true;place(chA,dir*(-L/2+f*L/2),cy,0,f*L,CT,W);place(chB,dir*(L/2-(1-f)*L/2),cy,0,(1-f)*L,CT,W);}
+  place(src,-L,H-D/2,0,L,D,W);place(drn,L,H-D/2,0,L,D,W);
+  place(ox,0,H+tv/2,0,L,tv,W);
+  const gTop=H+tv+GH;place(gate,0,H+tv+GH/2,0,L,GH,W);
+  dist=Math.max(SL,W,1)*1.9+1.6;
+  const yT=gTop+0.4,kk=dist/5;
+  rS.set(-L,H,yT);rD.set(L,H,yT);rG.set(0,gTop,yT+0.1);
+  [lS,lG,lD].forEach(l=>l.sp.scale.set(0.48*kk,0.144*kk,1));
+  lS.sp.position.set(-L,yT+0.15*kk,0);lD.sp.position.set(L,yT+0.15*kk,0);lG.sp.position.set(0,yT+0.1+0.15*kk,0);
+  lS.set('S  '+V.S.toFixed(2)+' V');lG.set('G  '+V.G.toFixed(2)+' V');lD.set('D  '+V.D.toFixed(2)+' V');
+
+  const sm={accumulation:['Accumulation','var(--accent-bg)','var(--accent)'],depletion:['Depletion','var(--warn-bg)','var(--warn)'],weak:['Weak inversion','var(--winv-bg)','var(--winv)'],strong:['Strong inversion','var(--inv-bg)','var(--inv)']}[ss.s];
+  const su=$('surf');su.textContent=sm[0];su.style.background=sm[1];su.style.color=sm[2];
+  const m={cutoff:[ss.s==='weak'?'Cutoff (subthreshold)':'Cutoff','var(--muted-bg)','var(--ink-2)'],linear:['Linear (triode)','var(--accent-bg)','var(--accent)'],saturation:['Saturation','var(--ok-bg)','var(--ok)']}[st.reg];
+  const rg=$('reg');rg.textContent=m[0];rg.style.background=m[1];rg.style.color=m[2];
+  const vth=s*Ph.Vte;
+  $('vgs').textContent=fV(V.G-V.S);$('vds').textContent=fV(V.D-V.S);
+  $('vov').textContent=fV(V.G-V.S-vth);$('idv').textContent=fIs(idR);
+
+  const maj=n?'holes':'electrons',majS=n?'hole':'electron',minS=n?'electron':'hole',subT=n?'p-type':'n-type',invT=n?'n-type':'p-type';
+  const sc2={accumulation:'Channel surface: the gate is past flat band (VG '+(n?'<':'>')+' VFB = '+Ph.vfb.toFixed(2)+' V), so '+maj+', the majority carriers in '+subT+' Si, pile up at the surface as an accumulation layer.',
+    depletion:'Channel surface: '+maj+' are pushed away from the surface, leaving a depletion region of fixed '+(n?'negative acceptor':'positive donor')+' ions. |ψs| is between 0 and φF, so the surface is still '+subT+'.',
+    weak:'Channel surface: |ψs| is between φF and 2φF, so the surface has turned '+invT+' (Ei has crossed EF) but its '+minS+' density is still below the bulk '+majS+' density. A subthreshold current flows and grows exponentially with the gate voltage (see the log plot).',
+    strong:'Channel surface: |ψs| ≥ 2φF, so the surface '+minS+' density exceeds the bulk '+majS+' density and a strong '+invT+' inversion layer forms the conducting channel.'}[ss.s];
+  $('scond').textContent=sc2;
+  const VG_=n?'VGS':'VSG',VD_=n?'VDS':'VSD',VT_=n?'Vth':'|Vth|';
+  const cs={cutoff:VG_+' ≤ '+VT_+', so no strong inversion layer forms and only a small subthreshold diffusion current flows.',
+    linear:VG_+' > '+VT_+' and '+VD_+' < '+VG_+' − '+VT_+'. The channel runs from source to drain and behaves like a voltage-controlled resistor.',
+    saturation:VG_+' > '+VT_+' and '+VD_+' ≥ '+VG_+' − '+VT_+'. The channel is pinched off near the drain, so the current is set mainly by '+VG_+'.'}[st.reg];
+  $('cond').textContent=cs+(st.sw?' The drain is at a '+(n?'lower':'higher')+' potential than the source, so their roles swap and current flows in reverse.':'');
+
+  $('kv').textContent=(k*1e3).toFixed(3)+' mA/V²';
+  $('coxv').textContent=(cox()*1e6).toFixed(3)+' µF/cm²';
+  $('tvd').textContent=fV(V.D-V.S);
+  const vsatE=Math.max(0,st.vov);$('vsat').textContent=fV(s*vsatE);
+  $('isat').textContent=fI(vsatE>0?s*0.5*k*vsatE*vsatE*(1+V.Lm*st.vds):0);
+  $('ro').textContent=(V.Lm>0&&idEq!==0)?(1/(V.Lm*Math.abs(idEq))/1e3).toFixed(1)+' kΩ':'∞ (λ = 0 or ID = 0)';
+  $('gm').textContent=vsatE>0?((k*vsatE)*1e3).toFixed(3)+' mS':'0 mS';
+
+  const imax=Math.max(idE(5,5),Math.abs(idEq),1e-9),uA=imax<1e-3,sc=uA?1e6:1e3,un=uA?'µA':'mA';
+  const yl=(n?'ID':'−ID')+' ('+un+')';
+  const N=150;
+  const tx=[...Array(N+1)].map((_,i)=>-1+6*i/N);
+  cT.data.datasets=[ln(tx.map(x=>({x:s*x,y:idE(x,vdsE)*sc})),C.acc,2.5),pt(V.G-V.S,idEq*sc)];
+  const px0=V.G-V.S;
+  cT.options.scales.x.min=n?Math.min(-1,px0):Math.min(-5,px0);cT.options.scales.x.max=n?Math.max(5,px0):Math.max(1,px0);
+  cT.options.scales.y.title.text=yl;cT.update();
+  const ox_=[...Array(N+1)].map((_,i)=>5*i/N);
+  const fam=[1,2,3,4,5].map(g=>ln(ox_.map(x=>({x:s*x,y:idE(g,x)*sc})),C.fam,1.2));
+  const edge=ox_.filter(x=>x<=5-Ph.Vte).map(x=>({x:s*x,y:0.5*k*x*x*(1+V.Lm*x)*sc}));
+  cO.data.datasets=[...fam,ln(edge,'#E0A030',1.5,[5,4]),ln(ox_.map(x=>({x:s*x,y:idE(vgsE,x)*sc})),C.acc,2.5),pt(V.D-V.S,idEq*sc)];
+  const px1=V.D-V.S;
+  cO.options.scales.x.min=n?Math.min(0,px1):-5;cO.options.scales.x.max=n?5:Math.max(0,px1);
+  cO.options.scales.y.title.text=yl;cO.update();
+
+  drawVert();drawLat();drawCV();drawLog();
+}
+
+/* ---------- subthreshold log plot ---------- */
+function drawLog(){
+  const s=Ph.s,n=s>0,e=Ve(),vdsE=e.D-e.S,vgsE=e.G-e.S,k=K(),nn=Ph.n,Vt=Ph.Vte;
+  const pts=[];for(let i=0;i<=300;i++){const x=-1+6*i/300,I=Math.abs(idE(x,vdsE));if(I>0)pts.push({x:s*x,y:I});}
+  const asy=[],lo=Vt-1.5;for(let i=0;i<=40;i++){const x=lo+(Vt+0.2-lo)*i/40;asy.push({x:s*x,y:2*k*nn*nn*kT*kT*Math.exp((x-Vt)/(nn*kT))*(1+V.Lm*Math.abs(vdsE))});}
+  const ymax=Math.max(1e-14,...pts.map(p=>p.y))*5;
+  const ds=[ln(pts,C.acc,2.5),ln(asy,'#E0A030',1.5,[5,4]),{data:[{x:s*Vt,y:1e-15},{x:s*Vt,y:ymax}],showLine:true,pointRadius:0,borderColor:'#E24B4A',borderWidth:1.2,borderDash:[4,4]}];
+  const Inow=Math.abs(idE(vgsE,vdsE));if(Inow>1e-15)ds.push(pt(V.G-V.S,Inow));
+  cL.data.datasets=ds;
+  const px0=V.G-V.S;
+  cL.options.scales.x.min=n?Math.min(-1,px0):Math.min(-5,px0);cL.options.scales.x.max=n?Math.max(5,px0):Math.max(1,px0);
+  cL.options.scales.y.max=Math.pow(10,Math.ceil(Math.log10(ymax)));
+  cL.options.scales.y.title.text=(n?'ID':'−ID')+' (A)';cL.update();
+  const ss=nn*kT*Math.LN10*1000,Wm=Math.sqrt(2*es*2*Ph.pF/(q*V.Na)),cdep=es/Wm;
+  $('nV').textContent=nn.toFixed(3);
+  $('cdepV').textContent=(cdep*1e6).toFixed(3)+' µF/cm²';
+  $('ssV').textContent=ss.toFixed(1)+' mV/dec';
+  const ioff=Math.abs(idE(0,vdsE)),ion=Math.abs(idE(5,vdsE));
+  $('ioffV').textContent=fIs(ioff);$('ionV').textContent=fIs(ion);
+  if(ioff>0){const r=ion/ioff,ex=Math.floor(Math.log10(r)),mn=r/Math.pow(10,ex);$('ratioV').innerHTML=mn.toFixed(1)+' × 10<sup>'+ex+'</sup>';}else $('ratioV').textContent='—';
+  $('logNote').textContent=Math.abs(vdsE)<1e-3?'VDS is 0, so no current flows. Set a nonzero drain voltage to see the curve.':
+    'SS = '+ss.toFixed(1)+' mV/dec: below threshold, |VGS| must change by about '+ss.toFixed(0)+' mV for each tenfold change in current. A thinner oxide or lighter substrate doping lowers n and makes the swing sharper.'+(Vt<0?' Vth is on the wrong side of 0 V here, so the device is already on at VGS = 0 and the off current is large.':'');
+}
+
+/* ---------- C-V ---------- */
+function csE(psi,N){
+  const LD=Math.sqrt(es*kT/(q*N)),r=Math.pow(ni/N,2),b=psi/kT;
+  const c0=es/LD;
+  let lf;if(Math.abs(b)<1e-3)lf=c0;else{const F=Math.sqrt(Math.max(1e-30,Math.exp(-b)+b-1+r*(Math.exp(b)-b-1)));lf=es/(Math.SQRT2*LD)*Math.abs(1-Math.exp(-b)+r*(Math.exp(b)-1))/F;}
+  const bh=Math.min(psi,2*phiF(N))/kT;
+  let hf;if(Math.abs(bh)<1e-3)hf=c0;else{const Fm=Math.sqrt(Math.max(1e-30,Math.exp(-bh)+bh-1));hf=es/(Math.SQRT2*LD)*Math.abs(1-Math.exp(-bh))/Fm;}
+  return{lf,hf};
+}
+function drawCV(){
+  const s=Ph.s,N_=V.Na,Cx=cox(),A=V.W*V.L*1e-8;
+  const lf=[],hf=[];
+  for(let i=0;i<=200;i++){const vg=-5+i*0.05,p=solvePsi(N_,s*vg,Ph.VFBe),c=csE(p,N_);lf.push({x:vg,y:1/(1+Cx/c.lf)});hf.push({x:vg,y:1/(1+Cx/c.hf)});}
+  const p0=solvePsi(N_,s*V.G,Ph.VFBe),c0=csE(p0,N_),rl=1/(1+Cx/c0.lf),rh=1/(1+Cx/c0.hf);
+  const vfb=Ph.vfb,vth=s*Ph.Vte;
+  const vl=(x,col)=>({data:[{x,y:0},{x,y:1.05}],showLine:true,pointRadius:0,borderColor:col,borderWidth:1.2,borderDash:[4,4]});
+  const ds=[ln(lf,C.acc,2.5),ln(hf,'#D4537E',2,[6,3])];
+  if(vfb>-5&&vfb<5)ds.push(vl(vfb,C.tc));
+  if(vth>-5&&vth<5)ds.push(vl(vth,'#E24B4A'));
+  ds.push({data:[{x:V.G,y:rh}],pointRadius:5,pointBackgroundColor:'#D4537E',pointBorderColor:C.ptBd,pointBorderWidth:2,showLine:false});
+  ds.push({data:[{x:V.G,y:rl}],pointRadius:6,pointBackgroundColor:'#E24B4A',pointBorderColor:C.ptBd,pointBorderWidth:2,showLine:false});
+  cC.data.datasets=ds;
+  cC.options.scales.x.min=-5;cC.options.scales.x.max=5;cC.options.scales.y.min=0;cC.options.scales.y.max=1.05;
+  cC.options.scales.y.title.text='C / Cox';cC.update();
+  const LD=Math.sqrt(es*kT/(q*N_)),cfb=1/(1+Cx*LD/es),Wm=Math.sqrt(2*es*2*Ph.pF/(q*N_)),cmin=1/(1+Cx*Wm/es);
+  const fF=x=>(x*A*1e15).toFixed(2)+' fF';
+  $('cvCox').textContent=(Cx*1e6).toFixed(3)+' µF/cm² ('+fF(Cx)+')';
+  $('cvLD').textContent=(LD*1e7).toFixed(1)+' nm';
+  $('cvFB').textContent=cfb.toFixed(3)+' × Cox ('+fF(cfb*Cx)+')';
+  $('cvWm').textContent=Wm*1e7>=1000?(Wm*1e4).toFixed(2)+' µm':(Wm*1e7).toFixed(0)+' nm';
+  $('cvMin').textContent=cmin.toFixed(3)+' × Cox ('+fF(cmin*Cx)+')';
+  $('cvVg').textContent=fV(V.G);
+  $('cvNow').textContent='LF '+rl.toFixed(3)+' × Cox ('+fF(rl*Cx)+'), HF '+rh.toFixed(3)+' × Cox ('+fF(rh*Cx)+')';
+}
+
+/* ---------- SVG helpers ---------- */
+function sub(t,sb){return t+'<tspan font-size="9" dy="3">'+sb+'</tspan><tspan dy="-3"></tspan>';}
+function tx(x,y,t,o){o=o||{};return '<text x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" font-size="'+(o.fs||12)+'" fill="'+(o.c||'var(--ink)')+'"'+(o.a?' text-anchor="'+o.a+'"':'')+'>'+t+'</text>';}
+function L_(x1,y1,x2,y2,c,w,da,extra){return '<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="'+c+'" stroke-width="'+(w||1.5)+'"'+(da?' stroke-dasharray="'+da+'"':'')+(extra||'')+'/>';}
+function arrowDefs(id){return '<marker id="'+id+'" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink-2)"/></marker>';}
+function carriers(xs,y,filled,col,op){return xs.map(x=>'<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3" '+(filled?'fill="'+col+'"':'fill="none" stroke="'+col+'" stroke-width="1.5"')+(op?' opacity="'+op+'"':'')+'/>').join('');}
+
+/* ---------- vertical EBD ---------- */
+function drawVert(){
+  const s=Ph.s,n=s>0,N_=V.Na,pF=Ph.pF,vgb=V.G,vfb=Ph.vfb;
+  const psE=solvePsi(N_,s*vgb,Ph.VFBe),ps=s*psE,vox=(vgb-vfb)-ps;
+  const Wd=psE>0?Math.sqrt(2*es*psE/(q*N_)):0,WdM=Math.sqrt(2*es*2*pF/(q*N_)),LD=Math.sqrt(es*kT/(q*N_)),Xs=1.8*WdM;
+  const EcB=Eg/2+s*pF,EiB=s*pF,EvB=EcB-Eg,EFm=-vgb;
+  const psi=x=>psE>0?(x<Wd?ps*Math.pow(1-x/Wd,2):0):ps*Math.exp(-x/LD);
+  const EcOS=EcB-ps+3.1,EcOG=EcOS-vox;
+  let Ecg=null,Evg=null;if(U.gm==='npoly'){Ecg=EFm;Evg=EFm-Eg;}else if(U.gm==='ppoly'){Evg=EFm;Ecg=EFm+Eg;}
+  const hiA=[EcOS,EcOG,EcB,EcB-ps,0,EFm];if(Ecg!==null)hiA.push(Ecg);
+  const loA=[EvB,EvB-ps,EFm,0];if(Evg!==null)loA.push(Evg);
+  const top=Math.max(...hiA)+0.5,bot=Math.min(...loA)-0.7;
+  const Y0=34,Y1=396,y=e=>Y0+(top-e)/(top-bot)*(Y1-Y0);
+  const GX0=64,GX1=170,OX1=250,SX1=680,sx=x=>OX1+x/Xs*(SX1-OX1);
+  const NP=180,line=f=>{const a=[];for(let i=0;i<=NP;i++){const x=Xs*Math.pow(i/NP,2.5);a.push(sx(x).toFixed(1)+','+y(f(x)).toFixed(1));}return a.join(' ');};
+  let o='<defs><clipPath id="cpv"><rect x="58" y="'+Y0+'" width="'+(SX1-58)+'" height="'+(Y1-Y0)+'"/></clipPath>'+arrowDefs('ahv')+'</defs>';
+  o+='<rect x="'+GX0+'" y="'+Y0+'" width="'+(GX1-GX0)+'" height="'+(Y1-Y0)+'" fill="#F59A23" fill-opacity="0.14"/>';
+  o+='<rect x="'+GX1+'" y="'+Y0+'" width="'+(OX1-GX1)+'" height="'+(Y1-Y0)+'" fill="#5BB8F0" fill-opacity="0.16"/>';
+  o+='<rect x="'+OX1+'" y="'+Y0+'" width="'+(SX1-OX1)+'" height="'+(Y1-Y0)+'" fill="#B5D4F4" fill-opacity="0.25"/>';
+  if(Wd>0){const wx=Math.min(sx(Wd),SX1);o+='<rect x="'+OX1+'" y="'+Y0+'" width="'+(wx-OX1).toFixed(1)+'" height="'+(Y1-Y0)+'" fill="#EF9F27" fill-opacity="0.16"/>'+L_(wx,Y0,wx,Y1,'#BA7517',1,'3 4')+tx(wx+4,Y1-6,sub('W','d'),{fs:11,c:'var(--ink-2)'});}
+  for(let e=Math.ceil(bot);e<=Math.floor(top);e++)o+=L_(58,y(e),SX1,y(e),'var(--line)',0.6)+tx(52,y(e)+4,String(e),{fs:11,c:'var(--ink-3)',a:'end'});
+  o+='<text transform="translate(16 '+((Y0+Y1)/2)+') rotate(-90)" text-anchor="middle" font-size="11" fill="var(--ink-3)">Energy (eV)</text>';
+  const gmName={npoly:'n⁺ poly',ppoly:'p⁺ poly',metal:'metal'}[U.gm];
+  o+=tx((GX0+GX1)/2,24,'Gate ('+gmName+')',{a:'middle',c:'var(--ink-2)'})+tx((GX1+OX1)/2,24,'SiO₂',{a:'middle',c:'var(--ink-2)'})+tx((OX1+SX1)/2,24,(n?'p-type':'n-type')+' Si (body)',{a:'middle',c:'var(--ink-2)'});
+  o+='<g clip-path="url(#cpv)">';
+  o+=L_(GX1,Y0,GX1,Y1,'var(--ink-3)',0.8)+L_(OX1,Y0,OX1,Y1,'var(--ink-3)',0.8);
+  o+=L_(GX0,y(0),OX1,y(0),'#E24B4A',1,'2 4',' stroke-opacity="0.5"');
+  o+=L_(OX1,y(0),SX1,y(0),'#E24B4A',1.5,'6 4');
+  o+=L_(GX0,y(EFm),GX1,y(EFm),'#E24B4A',2);
+  if(Ecg!==null){o+=L_(GX0,y(Ecg),GX1,y(Ecg),'var(--ink)',2,U.gm==='npoly'?'1 0':null)+L_(GX0,y(Evg),GX1,y(Evg),'var(--ink)',2);}
+  o+=L_(GX1,y(EcOG),OX1,y(EcOS),'var(--ink)',2)+L_(GX1,y(EcOG-9),OX1,y(EcOS-9),'var(--ink)',2);
+  o+='<polyline points="'+line(x=>EcB-psi(x))+'" fill="none" stroke="var(--ink)" stroke-width="2"/>';
+  o+='<polyline points="'+line(x=>EiB-psi(x))+'" fill="none" stroke="var(--ink-3)" stroke-width="1.2" stroke-dasharray="5 4"/>';
+  o+='<polyline points="'+line(x=>EvB-psi(x))+'" fill="none" stroke="var(--ink)" stroke-width="2"/>';
+  const cx=[0,1,2,3,4,5].map(i=>OX1+6+i*9),cx3=[0,1,2].map(i=>OX1+6+i*12);
+  const ecS=y(EcB-ps)-5,evS=y(EvB-ps)+5;
+  const vs=psE<0?'acc':psE<pF?'dep':psE<2*pF*0.98?'weak':'strong';
+  if(vs==='strong')o+=n?carriers(cx,ecS,true,'#E24B4A'):carriers(cx,evS,false,'#E24B4A');
+  if(vs==='weak')o+=n?carriers(cx3,ecS,true,'#E24B4A',0.45):carriers(cx3,evS,false,'#E24B4A',0.45);
+  if(psE<-0.02)o+=n?carriers(cx,evS,false,'#185FA5'):carriers(cx,ecS,true,'#185FA5');
+  if(Math.abs(vgb)>0.15)o+=L_(GX0+30,y(0),GX0+30,y(EFm),'var(--ink-2)',1.2,null,' marker-start="url(#ahv)" marker-end="url(#ahv)"')+tx(GX0+36,(y(0)+y(EFm))/2+4,sub('qV','G'),{c:'var(--ink-2)'});
+  if(Math.abs(ps)>0.1){const ax=OX1+70;o+=L_(OX1,y(EiB),ax+30,y(EiB),'var(--ink-3)',1,'2 3')+L_(ax,y(EiB),ax,y(EiB-ps),'var(--ink-2)',1.2,null,' marker-start="url(#ahv)" marker-end="url(#ahv)"')+tx(ax+6,(y(EiB)+y(EiB-ps))/2+4,'qψ<tspan font-size="9" dy="3">s</tspan>',{c:'var(--ink-2)'});}
+  o+='</g>';
+  const gl=U.gm==='npoly'?'E<tspan font-size="9" dy="3">C</tspan><tspan dy="-3"> ≈ E</tspan><tspan font-size="9" dy="3">F,m</tspan>':U.gm==='ppoly'?'E<tspan font-size="9" dy="3">V</tspan><tspan dy="-3"> ≈ E</tspan><tspan font-size="9" dy="3">F,m</tspan>':sub('E','F,m');
+  o+=tx(GX0+4,y(EFm)+(U.gm==='ppoly'?16:-6),gl,{c:'#E24B4A',fs:11});
+  if(U.gm==='npoly')o+=tx(GX0+4,y(Evg)+14,sub('E','V'),{fs:11,c:'var(--ink-2)'});
+  if(U.gm==='ppoly')o+=tx(GX0+4,y(Ecg)-6,sub('E','C'),{fs:11,c:'var(--ink-2)'});
+  const oy=(y(EcOG)+y(EcOS))/2-8;if(oy>Y0+10)o+=tx((GX1+OX1)/2,oy,sub('E','C,ox'),{fs:11,c:'var(--ink-2)',a:'middle'});
+  let yi=y(EiB),yf=y(0);if(Math.abs(yi-yf)<13)yi=yf+(yi>yf?13:-13);
+  o+=tx(SX1+6,y(EcB)+4,sub('E','C'))+tx(SX1+6,yi+4,sub('E','i'),{c:'var(--ink-3)'})+tx(SX1+6,yf+4,sub('E','F'),{c:'#E24B4A'})+tx(SX1+6,y(EvB)+4,sub('E','V'));
+  $('ebd').innerHTML=o;
+  const ex=Math.floor(Math.log10(N_)),mn=N_/Math.pow(10,ex);
+  $('naLab').innerHTML='<i>N</i><sub>'+(n?'A':'D')+'</sub>';
+  $('naV').innerHTML=mn.toFixed(2)+' × 10<sup>'+ex+'</sup> cm⁻³';
+  $('pfV').textContent=pF.toFixed(3)+' V';
+  $('pmV').textContent=phiM().toFixed(2)+' eV'+(U.gm==='npoly'?' (≈ χ)':U.gm==='ppoly'?' (≈ χ + Eg)':'');
+  $('phisEq').innerHTML='φ<sub>s</sub> = χ + <i>E</i><sub>g</sub>/2 '+(n?'+':'−')+' φ<sub>F</sub> = <span class="val">'+Ph.phis.toFixed(3)+' eV</span>';
+  $('vfbV').textContent=fV(vfb,3);
+  $('vtEq').innerHTML='<i>V</i><sub>th</sub> = <i>V</i><sub>FB</sub> '+(n?'+':'−')+' 2φ<sub>F</sub> '+(n?'+':'−')+' γ√(2φ<sub>F</sub>) = <span class="val">'+fV(s*Ph.Vte,3)+'</span>';
+  $('vmgEq').innerHTML='<i>V</i><sub>mg</sub> = <i>V</i><sub>FB</sub> '+(n?'+':'−')+' φ<sub>F</sub> '+(n?'+':'−')+' γ√φ<sub>F</sub> = <span class="val">'+fV(s*Ph.Vmge,3)+'</span>';
+  const vsName={acc:'accumulation',dep:'depletion',weak:'weak inversion',strong:'strong inversion'}[vs];
+  $('psV').textContent=fV(ps,3)+' ('+vsName+')';
+  $('voxV').textContent=fV(vox,3);
+  const wn=Wd*1e7;$('wdV').textContent=Wd>0?(wn>=1000?(wn/1000).toFixed(2)+' µm':wn.toFixed(0)+' nm'):'0 (no depletion)';
+  $('ebdNote').textContent='Depletion: 0 < |ψs| < φF. Weak inversion: φF ≤ |ψs| < 2φF, where the surface has flipped type but holds fewer minority carriers than the bulk has majority carriers. Strong inversion: |ψs| ≥ 2φF.';
+}
+
+/* ---------- lateral EBD ---------- */
+function drawLat(){
+  const s=Ph.s,n=s>0,e=Ve(),pF=Ph.pF,g=Ph.g,VFBe=Ph.VFBe,Vte=Ph.Vte;
+  let vgs=e.G-e.S,vds=e.D-e.S,sw=false,shift=0;
+  if(vds<0){vgs=e.G-e.D;shift=-vds;vds=-vds;sw=true;}
+  const vov=vgs-Vte,t0=vgs-VFBe;
+  let pd;if(t0<=0)pd=solvePsi(V.Na,vgs,VFBe);else{const rr=(-g+Math.sqrt(g*g+4*t0))/2;pd=rr*rr;}
+  const uf=yy=>{if(vov<=0)return 0;if(vds<vov)return vov-Math.sqrt(Math.max(0,vov*vov-yy*(2*vov*vds-vds*vds)));return vov-vov*Math.sqrt(Math.max(0,1-yy));};
+  const psy=yy=>Math.min(pd,2*pF+uf(yy));
+  const EcBe=pF+Eg/2,EcL=0,EcR=-vds,w=0.12;
+  const smf=z=>z<=0?0:z>=1?1:z*z*(3-2*z);
+  const ecAt=t=>{if(t<=1)return EcL;if(t>=2)return EcR;let v=EcBe-psy(t-1);const b1=smf((t-1)/w),b2=smf((2-t)/w);v=EcL*(1-b1)+v*b1;v=EcR*(1-b2)+v*b2;return v;};
+  const tr=E=>s*(E+shift),xr=t=>sw?3-t:t;
+  const NP=360,T=[...Array(NP+1)].map((_,i)=>3*i/NP);
+  const ec=T.map(t=>ecAt(t));
+  let bar=-1e9,barT=1.5;T.forEach((t,i)=>{if(t>=1&&t<=2&&ec[i]>bar){bar=ec[i];barT=t;}});
+  const efL=0,efR=-vds;
+  const efCh=vov>0?T.filter(t=>t>=1&&t<=2).map(t=>[t,-uf(t-1)]):[];
+  const vals=[];ec.forEach(v=>{vals.push(tr(v),tr(v-Eg));});vals.push(tr(efL),tr(efR));
+  const top=Math.max(...vals)+0.45,bot=Math.min(...vals)-0.45;
+  const Y0=34,Y1=376,y=E=>Y0+(top-E)/(top-bot)*(Y1-Y0);
+  const X0=60,X1=680,xp=t=>X0+xr(t)/3*(X1-X0);
+  const pts=f=>T.map((t,i)=>xp(t).toFixed(1)+','+y(tr(f(i))).toFixed(1)).join(' ');
+  let o='<defs><clipPath id="cpl"><rect x="'+X0+'" y="'+Y0+'" width="'+(X1-X0)+'" height="'+(Y1-Y0)+'"/></clipPath>'+arrowDefs('ahl')+'</defs>';
+  const xa=xp(0),xb=xp(1),xc=xp(2),xd_=xp(3);
+  const r1=[Math.min(xa,xb),Math.abs(xb-xa)],r3=[Math.min(xc,xd_),Math.abs(xd_-xc)];
+  o+='<rect x="'+r1[0]+'" y="'+Y0+'" width="'+r1[1]+'" height="'+(Y1-Y0)+'" fill="#F7C1C1" fill-opacity="0.28"/>';
+  o+='<rect x="'+Math.min(xb,xc)+'" y="'+Y0+'" width="'+Math.abs(xc-xb)+'" height="'+(Y1-Y0)+'" fill="#B5D4F4" fill-opacity="0.25"/>';
+  o+='<rect x="'+r3[0]+'" y="'+Y0+'" width="'+r3[1]+'" height="'+(Y1-Y0)+'" fill="#F7C1C1" fill-opacity="0.28"/>';
+  for(let E=Math.ceil(bot);E<=Math.floor(top);E++)o+=L_(X0,y(E),X1,y(E),'var(--line)',0.6)+tx(X0-6,y(E)+4,String(E),{fs:11,c:'var(--ink-3)',a:'end'});
+  o+='<text transform="translate(16 '+((Y0+Y1)/2)+') rotate(-90)" text-anchor="middle" font-size="11" fill="var(--ink-3)">Energy (eV)</text>';
+  const sd=n?'n⁺':'p⁺';
+  o+=tx((X0+(X0+X1)/2)/2-52,24,'Source ('+sd+')',{a:'middle',c:'var(--ink-2)'})+tx((X0+X1)/2,24,'Channel (under gate)',{a:'middle',c:'var(--ink-2)'})+tx(X1-(X1-X0)/6,24,'Drain ('+sd+')',{a:'middle',c:'var(--ink-2)'});
+  o+='<g clip-path="url(#cpl)">';
+  o+='<polyline points="'+pts(i=>ec[i])+'" fill="none" stroke="var(--ink)" stroke-width="2"/>';
+  o+='<polyline points="'+pts(i=>ec[i]-Eg/2)+'" fill="none" stroke="var(--ink-3)" stroke-width="1.2" stroke-dasharray="5 4"/>';
+  o+='<polyline points="'+pts(i=>ec[i]-Eg)+'" fill="none" stroke="var(--ink)" stroke-width="2"/>';
+  o+=L_(xp(0),y(tr(efL)),xp(1),y(tr(efL)),'#E24B4A',1.5,'6 4')+L_(xp(2),y(tr(efR)),xp(3),y(tr(efR)),'#E24B4A',1.5,'6 4');
+  if(efCh.length)o+='<polyline points="'+efCh.map(a=>xp(a[0]).toFixed(1)+','+y(tr(a[1])).toFixed(1)).join(' ')+'" fill="none" stroke="#E24B4A" stroke-width="1.2" stroke-dasharray="2 3"/>';
+  const bx=xp(barT);
+  if(bar-EcL>0.03)o+=L_(xp(0),y(tr(EcL)),bx+20,y(tr(EcL)),'var(--ink-3)',1,'2 3')+L_(bx,y(tr(EcL)),bx,y(tr(bar)),'var(--ink-2)',1.2,null,' marker-start="url(#ahl)" marker-end="url(#ahl)"')+tx(bx+6,(y(tr(EcL))+y(tr(bar)))/2+4,'qφ<tspan font-size="9" dy="3">B</tspan>',{c:'var(--ink-2)'});
+  if(vds>0.05){const ax=xp(sw?0.5:2.5);o+=L_(xp(0),y(tr(efL)),xp(3),y(tr(efL)),'#E24B4A',1,'2 4',' stroke-opacity="0.45"')+L_(ax,y(tr(efL)),ax,y(tr(efR)),'var(--ink-2)',1.2,null,' marker-start="url(#ahl)" marker-end="url(#ahl)"')+tx(ax+6,(y(tr(efL))+y(tr(efR)))/2+4,sub('qV','DS'),{c:'var(--ink-2)'});}
+  o+='</g>';
+  const nm=n?['C','V']:['V','C'];
+  const iR=sw?0:NP,eR=ec[iR];
+  o+=tx(X1+6,y(tr(eR))+4,sub('E',nm[0]))+tx(X1+6,y(tr(eR-Eg/2))+4,sub('E','i'),{c:'var(--ink-3)'})+tx(X1+6,y(tr(eR-Eg))+4,sub('E',nm[1]));
+  const efRight=sw?efL:efR,efLeft=sw?efR:efL;
+  o+=tx(X1+6,y(tr(efRight))+(Math.abs(y(tr(efRight))-y(tr(eR)))<12?16:4),sub('E','F,D'),{c:'#E24B4A'});
+  o+=tx(X0+6,y(tr(efLeft))-6,sub('E','F,S'),{c:'#E24B4A',fs:11});
+  $('lat').innerHTML=o;
+  $('barLab').innerHTML='Barrier for '+(n?'electrons':'holes')+', qφ<sub>B</sub>';
+  $('barV').textContent=Math.max(0,bar-EcL).toFixed(3)+' eV';
+  $('ps0V').textContent=fV(s*psy(0),3);
+  $('psLV').textContent=fV(s*psy(1),3);
+  $('pinchV').textContent=vov<=0?'no channel':vds>=vov?'yes, near the drain':'no, channel reaches the drain';
+  const car=n?'electrons':'holes';
+  $('latNote').textContent=vov<=0?'Below threshold the channel forms a barrier that '+car+' from the source must cross, so only a small subthreshold current can flow. Raising |VGS| lowers the barrier.':
+    vds<vov?'In the linear region the barrier is gone and the quasi-Fermi level (dotted) slopes smoothly from the source to the drain.':
+    'In saturation the channel pinches off near the drain: '+car+' reaching that point are swept down the steep band edge into the drain.';
+}
+
+/* ---------- events ---------- */
+P.forEach(p=>{const k=p.k,sl=$(k+'s'),nb=$(k+'n'),er=$(k+'e');
+  sl.addEventListener('input',()=>{V[k]=fromS(p,+sl.value);nb.value=fv(p,V[k]);er.textContent='';render();save();});
+  nb.addEventListener('input',()=>{const v=parseFloat(nb.value);
+    if(nb.value===''||isNaN(v)){er.textContent='Enter a number.';return;}
+    if(v<p.min||v>p.max){er.textContent='Enter a value from '+fr(p,p.min)+' to '+fr(p,p.max)+' '+p.u+'.';return;}
+    er.textContent='';V[k]=v;sl.value=toS(p,v);render();save();});
+  nb.addEventListener('blur',()=>{if(!er.textContent)nb.value=fv(p,V[k]);});});
+document.querySelectorAll('input[name=dt]').forEach(rb=>rb.addEventListener('change',()=>{
+  if(!rb.checked||rb.value===U.type)return;
+  U.type=rb.value;V.G=-V.G;V.S=-V.S;V.D=-V.D;
+  U.gm=U.gm==='npoly'?'ppoly':U.gm==='ppoly'?'npoly':'metal';
+  V.Pm=Math.min(5,Math.max(3.5,2*(CHI+Eg/2)-V.Pm));
+  setRanges();clampAll();syncControls();render();save();}));
+document.querySelectorAll('input[name=gm]').forEach(rb=>rb.addEventListener('change',()=>{if(!rb.checked)return;U.gm=rb.value;$('pmRow').style.display=U.gm==='metal'?'':'none';render();save();}));
+$('ex').addEventListener('input',()=>{render();save();});
+$('reset').addEventListener('click',()=>{U.type='n';U.gm='npoly';setRanges();P.forEach(p=>V[p.k]=p.v);$('ex').checked=true;syncControls();render();save();});
+
+function size(){const w=el.clientWidth,hh=el.clientHeight;r.setSize(w,hh);cam.aspect=w/hh;cam.updateProjectionMatrix();}
+function draw(){cam.position.set(dist*Math.sin(ry)*Math.cos(rx),ty+dist*Math.sin(rx),dist*Math.cos(ry)*Math.cos(rx));cam.lookAt(0,ty,0);r.render(s3,cam);requestAnimationFrame(draw);}
+el.addEventListener('pointerdown',ev=>{drag=true;px=ev.clientX;py=ev.clientY;el.style.cursor='grabbing';el.setPointerCapture(ev.pointerId);});
+el.addEventListener('pointermove',ev=>{if(!drag)return;ry-=(ev.clientX-px)*0.01;rx=Math.max(-0.3,Math.min(1.45,rx+(ev.clientY-py)*0.01));px=ev.clientX;py=ev.clientY;});
+el.addEventListener('pointerup',()=>{drag=false;el.style.cursor='grab';});
+el.addEventListener('pointercancel',()=>{drag=false;el.style.cursor='grab';});
+window.addEventListener('resize',size);
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+syncControls();size();applyTheme();draw();
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(render);
+</script>
+</body>
+</html>
