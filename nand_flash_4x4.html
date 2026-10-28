@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NAND 플래시 4×4 어레이 시뮬레이터</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1F4;--panel:#FFFFFF;--ink:#15202B;--muted:#5B6875;--line:#CCD4DC;--soft:#E4E9EE;
+  --wl:#2F6FB0;--hv:#C9372C;--flow:#D98E04;--el:#1F4FA8;
+  --er-f:#DDEFE6;--er-s:#3E8E6A;--pg-f:#F6E3BE;--pg-s:#A86B12;--well:#E8EDF4;--acc:#2F6FB0;--acc-ink:#FFFFFF;
+  --gate-t:#9DBDE2;--gate-f:#6E98C8;--gate-r:#5683B6;--gate-hl:#C9DDF3;--sg-t:#C3CAD2;--sg-f:#A5AEB9;--si-t:#7CC4A6;--si-f:#4F9A7E;--ox:#F1F3F5;--well-t:#E9A9BF;--well-f:#D27F9C;--well-r:#C46D8B;--metal:#C9B48A;--metal-f:#A99266;--edge:#6F7B87;--nit-gap:#E2DCD2;--sti-t:#C9D3DC;--sti-f:#AEB9C4;--sgg-t:#B8A6D9;--sgg-f:#9A86C2;--sgg-r:#8A76B3;--np-t:#8DB4EA;--np-f:#5E8BD0;--poly-t:#DCC9B3;--poly-f:#C2AC93;--poly-r:#B19C83;--ox-t:#F5F8FB;--ox-f:#DCE5EC;--er-m:#B5DCC8;--pg-m:#EAC685;
+  color-scheme:light;box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F151B;--panel:#172029;--ink:#E5EAF0;--muted:#9AA7B3;--line:#33404C;--soft:#202B36;
+  --wl:#6FA8E8;--hv:#F06A5F;--flow:#F2B33D;--el:#8FB8FF;
+  --er-f:#1C3A2F;--er-s:#5FBF92;--pg-f:#433519;--pg-s:#E0A84A;--well:#131C25;--acc:#6FA8E8;--acc-ink:#0F151B;--gate-t:#3E6390;--gate-f:#2F4F75;--gate-r:#27425F;--gate-hl:#5B8AC2;--sg-t:#3A4552;--sg-f:#2C3540;--si-t:#2E7A60;--si-f:#225C48;--ox:#33404C;--well-t:#7A3A52;--well-f:#622C41;--well-r:#552538;--metal:#7E6C4A;--metal-f:#5F5137;--edge:#5A6875;--nit-gap:#55504A;--sti-t:#3F4A55;--sti-f:#333D47;--sgg-t:#5E4E80;--sgg-f:#4B3E68;--sgg-r:#41365B;--np-t:#2F5A9A;--np-f:#244A80;--poly-t:#6E5E4A;--poly-f:#57493A;--poly-r:#4B3F33;--ox-t:#46525E;--ox-f:#3A4651;--er-m:#285443;--pg-m:#5E4920;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F151B;--panel:#172029;--ink:#E5EAF0;--muted:#9AA7B3;--line:#33404C;--soft:#202B36;
+  --wl:#6FA8E8;--hv:#F06A5F;--flow:#F2B33D;--el:#8FB8FF;
+  --er-f:#1C3A2F;--er-s:#5FBF92;--pg-f:#433519;--pg-s:#E0A84A;--well:#131C25;--acc:#6FA8E8;--acc-ink:#0F151B;--gate-t:#3E6390;--gate-f:#2F4F75;--gate-r:#27425F;--gate-hl:#5B8AC2;--sg-t:#3A4552;--sg-f:#2C3540;--si-t:#2E7A60;--si-f:#225C48;--ox:#33404C;--well-t:#7A3A52;--well-f:#622C41;--well-r:#552538;--metal:#7E6C4A;--metal-f:#5F5137;--edge:#5A6875;--nit-gap:#55504A;--sti-t:#3F4A55;--sti-f:#333D47;--sgg-t:#5E4E80;--sgg-f:#4B3E68;--sgg-r:#41365B;--np-t:#2F5A9A;--np-f:#244A80;--poly-t:#6E5E4A;--poly-f:#57493A;--poly-r:#4B3F33;--ox-t:#46525E;--ox-f:#3A4651;--er-m:#285443;--pg-m:#5E4920;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:15px;line-height:1.6;font-variant-numeric:tabular-nums}
+header{max-width:1200px;margin:0 auto;padding:28px 20px 6px}
+h1{font-size:27px;font-weight:600;margin:0 0 4px;letter-spacing:-.015em;line-height:1.3}
+header p{margin:0;color:var(--muted);max-width:70ch}
+main{max-width:1200px;margin:0 auto;padding:14px 20px 40px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px;align-items:start}
+@media(max-width:920px){main{grid-template-columns:minmax(0,1fr)}}
+.col{display:grid;gap:18px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;min-width:0}
+.card h2{font-size:16px;font-weight:600;margin:0 0 10px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+.head h2{margin:0}
+svg{display:block;width:100%;height:auto;max-width:100%}
+.svgwrap{overflow-x:auto}
+#array{min-width:520px;display:block;overflow:hidden;border-radius:10px;background:var(--bg)}
+button{font:inherit;font-size:14px;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:8px;padding:7px 13px;cursor:pointer;line-height:1.3}
+button:hover{background:var(--soft)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+button.primary{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+button.primary:hover{filter:brightness(1.08)}
+button:disabled{opacity:.45;cursor:default}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;background:var(--soft);padding:4px;border-radius:10px;margin-bottom:14px}
+.tabs button{border:none;border-radius:7px;padding:8px 4px;font-weight:500}
+.tabs button[aria-selected="true"]{background:var(--panel);box-shadow:0 0 0 1px var(--line)}
+.seg{display:flex;gap:4px;flex-wrap:wrap}
+.seg button{padding:5px 11px}
+.seg button.on{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+.field{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;flex-wrap:wrap}
+.field>span{color:var(--muted);font-size:14px}
+.rng{display:grid;grid-template-columns:1fr auto;gap:2px 10px;margin:0 0 10px;font-size:14px}
+.rng span{color:var(--muted)}
+.rng output{font-weight:500}
+.rng input{grid-column:1/-1;width:100%;accent-color:var(--acc)}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+.hint{color:var(--muted);font-size:14px;margin:0 0 12px}
+.stat{background:var(--soft);border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.65}
+.stat b{font-weight:600}
+.err{color:var(--hv);font-weight:600}
+.ok{color:var(--er-s);font-weight:600}
+select{font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+#info{font-size:14px;color:var(--muted);margin:8px 2px 0;min-height:1.6em}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px;border:1px solid}
+#log{list-style:none;margin:0;padding:0;max-height:240px;overflow-y:auto;font-size:13.5px}
+#log li{padding:6px 0;border-bottom:1px solid var(--soft);color:var(--muted)}
+#log li:first-child{color:var(--ink)}
+.t-ink{fill:var(--ink)}.t-mut{fill:var(--muted)}
+.flow{stroke-dasharray:7 7;animation:fl .7s linear infinite}
+@keyframes fl{to{stroke-dashoffset:-14}}
+@media (prefers-reduced-motion:reduce){.flow{animation:none}}
+.cell{cursor:pointer}
+#array{touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+#array.dragging,#array.dragging .cell{cursor:grabbing}
+.pb{cursor:default}
+.pb.click{cursor:pointer}
+.tun circle{opacity:0}
+.tun.up circle{animation:tup .3s ease-in infinite}
+.tun.dn circle{animation:tdn .3s ease-in infinite}
+@keyframes tup{from{transform:translate(0,0);opacity:1}to{transform:translate(var(--tx),var(--ty));opacity:0}}
+@keyframes tdn{from{transform:translate(var(--tx),var(--ty));opacity:1}to{transform:translate(0,0);opacity:0}}
+@media (prefers-reduced-motion:reduce){.tun.up circle,.tun.dn circle{animation:none;opacity:1}}
+.vctl{display:flex;gap:4px;align-items:center}
+.vctl button{padding:5px 10px;min-width:34px}
+#zoomV{font-size:13px;color:var(--muted);min-width:44px;text-align:center}
+[hidden]{display:none!important}
+.ly-bl{fill-opacity:var(--op-bl,1)!important}
+.ly-wl{fill-opacity:var(--op-wl,0.5)!important}
+.ly-poly{fill-opacity:var(--op-poly,0.28)!important}
+.ly-box{fill-opacity:var(--op-box,0.22)!important}
+.ly-nit{fill-opacity:var(--op-nit,0.6)!important}
+.ly-tox{fill-opacity:var(--op-tox,0.55)!important}
+.ly-sg{fill-opacity:var(--op-sg,1)!important}
+.ly-csl{fill-opacity:var(--op-csl,1)!important}
+.ly-np{fill-opacity:var(--op-np,1)!important}
+.ly-sti{fill-opacity:var(--op-sti,1)!important}
+.ly-pw{fill-opacity:var(--op-pw,1)!important}
+.lyrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px;font-size:13px}
+.lyrow>b{font-weight:600;margin-right:4px}
+.lyrow button{padding:4px 9px;font-size:12.5px}
+.lyrow button[aria-pressed="true"]{background:var(--soft);border-style:dashed;color:var(--muted)}
+
+.pbrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:10px}
+.pbrow .cap{display:flex;flex-direction:column;font-size:13px;line-height:1.35;min-width:92px}
+.pbrow .cap span{color:var(--muted);font-size:12px}
+.pbs{display:flex;gap:8px}
+.pbb{display:flex;flex-direction:column;align-items:center;padding:4px 0 3px;width:52px;line-height:1.15}
+.pbb .d{font-size:18px;font-weight:600}.pbb .l{font-size:11px;color:var(--muted)}
+.pbb.sel{border:2px solid var(--acc)}.pbb.bad{border:2px solid var(--hv);color:var(--hv)}
+.pbb:disabled{opacity:1;cursor:default}
+.wellrow{font-size:13px;color:var(--muted);margin-left:auto}
+.wellrow b{color:var(--ink);font-weight:600}
+table.mt{width:100%;border-collapse:collapse;font-size:14px;margin:4px 0 10px}
+table.mt th,table.mt td{padding:4px 4px;text-align:left}
+table.mt thead th{font-weight:500;color:var(--muted);font-size:12.5px}
+table.mt tbody th{font-weight:600;width:64px}
+input[type=number]{font:inherit;font-size:14px;width:76px;padding:5px 7px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink)}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px 12px;margin:0 0 12px}
+.vin{display:flex;align-items:center;gap:6px;font-size:14px}.vin span:first-child{width:36px;font-weight:600}.vin span:last-child{color:var(--muted)}
+.vin input{width:64px}
+.sub{font-size:14px;font-weight:600;margin:14px 0 6px}
+#timing{width:100%;height:auto;display:block}
+</style>
+</head>
+<body>
+<header>
+  <h1>NAND 플래시 4×4 어레이 시뮬레이터</h1>
+  <p>워드라인 4개, 비트라인 4개로 된 블록 하나를 직접 조작합니다. 전압을 바꿔 프로그램, 소거, 읽기를 실행하고, 시간과 온도에 따른 리텐션 손실을 확인하세요.</p>
+</header>
+<main>
+  <div class="col">
+    <section class="card">
+      <div class="head"><h2>셀 어레이와 바이어스</h2><div class="vctl"><button id="zout" aria-label="축소">−</button><span id="zoomV">100%</span><button id="zin" aria-label="확대">+</button><button id="resetView">시점 초기화</button><button id="resetAll">전체 초기화</button></div></div>
+      <div class="svgwrap"><svg id="array" viewBox="0 0 640 560" role="img" tabindex="0" aria-label="NAND 4x4 셀 어레이. 드래그하거나 방향키로 돌려 볼 수 있습니다"></svg></div>
+      <div class="pbrow"><div class="cap"><b>페이지 버퍼</b><span id="pbCap"></span></div><div class="pbs" id="pbs"></div><div class="wellrow">P-well <b id="pwV"></b></div></div>
+      <div class="lyrow" id="lyrow"><b>층 표시</b></div>
+      <p id="info">드래그: 360° 회전(아래쪽도 볼 수 있음), 휠 또는 핀치: 확대/축소, 오른쪽 버튼이나 Shift+드래그: 이동. 셀을 누르면 해당 워드라인이 선택됩니다.</p>
+      <div class="legend">
+        <span><i style="background:var(--gate-t);border-color:var(--gate-r);opacity:.6"></i>WL (금속 워드라인)</span>
+        <span><i style="background:var(--poly-t);border-color:var(--poly-r);opacity:.6"></i>컨트롤 게이트 (폴리)</span>
+        <span><i style="background:var(--ox-t);border-color:var(--ox-f)"></i>블로킹 / 터널 산화막</span>
+        <span><i style="background:linear-gradient(90deg,rgb(40,104,214),rgb(228,222,212),rgb(216,46,36));border-color:var(--line);width:44px"></i>나이트라이드: 소거(파랑) ↔ 프로그램(빨강)</span>
+        <span><i style="background:radial-gradient(circle at 35% 32%,#E8F0FF,#3C6FD6 45%,#0A2560);border:none;border-radius:50%"></i>트랩된 전자</span>
+        <span><i style="background:var(--well-t);border-color:var(--well-f)"></i>P-well (터널 산화막 아래 기판)</span>
+        <span><i style="background:var(--np-t);border-color:var(--np-f)"></i>S/D(n+) 소스/드레인 접합</span>
+        <span><i style="background:var(--sti-t);border-color:var(--sti-f)"></i>STI (소자 분리 산화막)</span>
+        <span><i style="background:var(--sgg-t);border-color:var(--sgg-r)"></i>선택 트랜지스터 게이트 (DSL, GSL)</span>
+        <span><i style="background:var(--metal);border-color:var(--metal-f)"></i>CSL (공통 소스 라인)</span>
+        <span><i style="background:var(--si-t);border-color:var(--si-f)"></i>BL 금속 배선과 컨택</span>
+        <span><i style="background:var(--flow);border-color:var(--flow)"></i>읽기 전류</span>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Vth 분포</h2>
+      <svg id="dist" viewBox="0 0 420 150" role="img" aria-label="16개 셀의 문턱전압 분포"></svg>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card">
+      <div class="tabs" role="tablist">
+        <button role="tab" data-op="program">프로그램</button>
+        <button role="tab" data-op="erase">소거</button>
+        <button role="tab" data-op="read">읽기</button>
+        <button role="tab" data-op="retention">리텐션</button>
+        <button role="tab" data-op="manual">직접 제어</button>
+      </div>
+
+      <div class="field" id="wlField"><span>선택 워드라인 (페이지)</span><div class="seg" id="wlSeg"></div></div>
+
+      <div data-panel="program">
+        <p class="hint">페이지 버퍼(어레이 아래 칸)를 눌러 BL별 데이터를 정하세요. 0은 프로그램, 1은 유지(inhibit)입니다. 펄스마다 Vpgm이 스텝만큼 올라가고, verify를 통과한 셀은 다음 펄스부터 자동으로 inhibit됩니다. 펄스 하나는 실제 칩에서 약 10–20 μs 동안 일어나는 FN 터널링 한 번이고, 그 뒤에 짧은 verify 읽기가 따라옵니다.</p>
+        <label class="rng"><span>Vpgm 시작 전압</span><output id="o-start"></output><input type="range" id="start" min="14" max="18" step="0.5"></label>
+        <label class="rng"><span>ISPP 스텝 ΔVpgm</span><output id="o-step"></output><input type="range" id="step" min="0.2" max="1" step="0.1"></label>
+        <label class="rng"><span>비선택 WL Vpass</span><output id="o-vpass"></output><input type="range" id="vpass" min="7" max="13" step="0.5"></label>
+        <label class="rng"><span>Verify 레벨</span><output id="o-verify"></output><input type="range" id="verify" min="0.5" max="3" step="0.1"></label>
+        <div class="btns"><button class="primary" id="pPulse">펄스 1회 인가</button><button id="pAuto">ISPP 자동 실행</button><button id="pReset">펄스 초기화</button></div>
+        <div class="stat" id="pStat"></div>
+      </div>
+
+      <div data-panel="erase" hidden>
+        <p class="hint">소거는 블록 단위입니다. P-well에 고전압을 걸고 모든 WL을 0V로 두면 전자가 기판으로 빠져나갑니다. 모든 셀이 Vth −1.0V 이하가 되면 erase verify를 통과합니다.</p>
+        <label class="rng"><span>P-well 소거 전압 Verase</span><output id="o-vers"></output><input type="range" id="vers" min="16" max="22" step="0.5"></label>
+        <div class="btns"><button class="primary" id="eAuto">자동 소거 (verify까지)</button><button id="ePulse">소거 펄스 1회</button></div>
+        <div class="stat" id="eStat"></div>
+      </div>
+
+      <div data-panel="read" hidden>
+        <p class="hint">선택 WL에는 읽기 전압 Vr, 나머지 WL에는 Vpass를 겁니다. Vr보다 Vth가 낮은 셀은 켜져서 BL이 방전되고 1로 읽힙니다. Vpass가 프로그램된 셀의 Vth보다 낮으면 스트링 전체가 막혀 0으로 잘못 읽힙니다.</p>
+        <label class="rng"><span>선택 WL 읽기 전압 Vr</span><output id="o-vr"></output><input type="range" id="vr" min="-1" max="3" step="0.1"></label>
+        <label class="rng"><span>비선택 WL Vpass(read)</span><output id="o-vp"></output><input type="range" id="vp" min="2" max="9" step="0.5"></label>
+        <div class="btns"><button class="primary" id="rRead">페이지 읽기</button><button id="rMany">10,000회 반복 읽기</button></div>
+        <div class="stat" id="rStat"></div>
+      </div>
+
+      <div data-panel="retention" hidden>
+        <p class="hint">전원을 끈 상태로 시간을 보냅니다. 갇힌 전자가 조금씩 빠져나가 프로그램된 셀의 Vth가 내려갑니다. 온도가 높을수록 빨라집니다(Arrhenius, Ea 1.1eV). 일부 셀은 산화막이 약해 더 빨리 잃습니다.</p>
+        <div class="field"><span>보관 온도</span><select id="temp"><option value="25">25 °C</option><option value="55">55 °C</option><option value="85">85 °C</option><option value="125">125 °C</option></select></div>
+        <div class="btns"><button id="b1d">+1일</button><button id="b1m">+1개월</button><button id="b1y">+1년</button><button class="primary" id="b10y">+10년</button></div>
+        <div class="stat" id="tStat"></div>
+      </div>
+
+      <div data-panel="manual" hidden>
+        <p class="hint">모든 라인 전압을 직접 정합니다. “유지”는 펄스 동안 그 라인이 머무는 전압(비선택 WL이면 Vpass), “펄스”는 그 줄의 펄스 인가 버튼을 눌렀을 때 그 WL에만 잠깐 걸리는 전압(Vpgm)입니다. 소거는 P-well 줄의 펄스로 합니다.</p>
+        <div class="btns"><button data-preset="pgm">프로그램 조건</button><button data-preset="read">읽기 조건</button><button data-preset="ers">소거 조건</button><button data-preset="zero">모두 0 V</button></div>
+        <table class="mt"><thead><tr><th>라인</th><th>유지 (V)</th><th>펄스 (V)</th><th></th></tr></thead><tbody id="mWL"></tbody></table>
+        <div class="vgrid" id="mLines"></div>
+        <div class="btns"><button class="primary" id="mSense">전류 감지 (유지 전압으로 읽기)</button></div>
+        <div class="stat" id="mStat"></div>
+        <p class="sub">펄스 타이밍</p>
+        <svg id="timing" viewBox="0 0 400 240" role="img" aria-label="펄스 1회 동안의 라인 전압 파형"></svg>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>동작 기록</h2>
+      <ul id="log"></ul>
+    </section>
+  </div>
+</main>
+
+<script>
+const $=s=>document.querySelector(s);
+const NS='http://www.w3.org/2000/svg';
+function el(t,a,p){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e}
+const BX=[205,305,405,505],WY=[470,380,290,200];
+const ROWS=[['DSL',110],['WL3',200],['WL2',290],['WL1',380],['WL0',470],['GSL',560],['CSL',620]];
+const LEAK=[1,.8,1.2,.9,.7,2.2,1,1.1,1.3,.9,.8,1.9,1,1.2,.6,1];
+const OFF=LEAK.map((l,i)=>(l-1)*.2+((i*37)%7-3)*.04);
+let S;
+function fresh(){
+  const pat=[[0,1,1,0],[1,0,1,1],[0,1,0,1],[1,1,0,0]];
+  S={vth:[],data:[],age:Array(16).fill(0),hours:0,erases:0,reads:0};
+  for(let w=0;w<4;w++)for(let b=0;b<4;b++){const i=w*4+b;S.data[i]=pat[w][b];
+    S.vth[i]=pat[w][b]?-2.6+((w+b)%3)*.2+OFF[i]*.5:1.6+((w*7+b*3)%5)*.15}
+}
+fresh();
+let op='program',wl=1,buf=[0,1,0,1],busy=false,flash=null;
+const P={start:16,step:.5,vpass:10,verify:1.5,vpgm:null,pulses:0,done:false,fail:false};
+const E={v:20,pulses:0,state:''};
+const R={vr:0,vp:6,res:null};
+const T={temp:25};
+const fmt=v=>(v>=0?'+':'−')+Math.abs(v).toFixed(2)+' V';
+const fmt1=v=>(v<0?'−':'')+Math.abs(v).toFixed(1)+' V';
+function log(t){const li=document.createElement('li');li.textContent=t;const L=$('#log');L.prepend(li);while(L.children.length>40)L.lastChild.remove()}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ---------- 3D scene ---------- */
+const A=$('#array');
+const DIST=1500,WCX=355,WCY=330,YAW0=30,ELV0=55,VBW=640,VBH=560;
+let YAWd=YAW0,ELVd=ELV0,ZOOM=1,PANX=0,PANY=0,cY,sY,cE,sE,CAM,F,OX,OY;
+const Z={ch:6,t1:10,n1:20,b1:27,g1:43,w1:53};
+function setCam(){const y=YAWd*Math.PI/180,e=ELVd*Math.PI/180;cY=Math.cos(y);sY=Math.sin(y);cE=Math.cos(e);sE=Math.sin(e);
+  CAM=[WCX+sY*DIST*cE,WCY+cY*DIST*cE,DIST*sE];F=DIST*.66*ZOOM;OX=330+PANX;OY=282+PANY}
+function view(x,y,z){const dx=x-WCX,dy=y-WCY,xr=cY*dx-sY*dy,yr=sY*dx+cY*dy;return[xr,-yr*sE+z*cE,DIST-(yr*cE+z*sE)]}
+function pj(x,y,z){const v=view(x,y,z);return[OX+F*v[0]/v[2],OY-F*v[1]/v[2]]}
+const sc=(x,y,z)=>F/view(x,y,z)[2];
+const facing=(n,p)=>n[0]*(CAM[0]-p[0])+n[1]*(CAM[1]-p[1])+n[2]*(CAM[2]-p[2]);
+const pts=a=>a.map(p=>pj(p[0],p[1],p[2]).map(v=>v.toFixed(1)).join(',')).join(' ');
+let curLy=null;
+const LYW=(n,fn)=>{const pr=curLy;curLy=n;const r=fn();curLy=pr;return r};
+const poly=(par,q,at)=>{const e=el('polygon',Object.assign({points:pts(q),'stroke-linejoin':'round',stroke:'var(--edge)','stroke-width':.7},at),par);if(curLy)e.classList.add('ly-'+curLy);return e};
+function box(par,x0,x1,y0,y1,z0,z1,c){
+  const mx=(x0+x1)/2,my=(y0+y1)/2,mz=(z0+z1)/2,o={sides:[],all:[]};
+  [['side',[1,0,0],[x1,my,mz],[[x1,y0,z0],[x1,y1,z0],[x1,y1,z1],[x1,y0,z1]],c[2]],
+   ['side',[-1,0,0],[x0,my,mz],[[x0,y0,z0],[x0,y1,z0],[x0,y1,z1],[x0,y0,z1]],c[2]],
+   ['side',[0,-1,0],[mx,y0,mz],[[x0,y0,z0],[x1,y0,z0],[x1,y0,z1],[x0,y0,z1]],c[1]],
+   ['side',[0,1,0],[mx,y1,mz],[[x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1]],c[1]],
+   ['side',[0,0,-1],[mx,my,z0],[[x0,y0,z0],[x1,y0,z0],[x1,y1,z0],[x0,y1,z0]],c[2]],
+   ['top',[0,0,1],[mx,my,z1],[[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]],c[0]]]
+  .forEach(([r,n,p,q,f])=>{if(facing(n,p)<=0)return;const e=poly(par,q,{fill:f});o.all.push(e);if(r==='side')o.sides.push(e);else o.top=e});
+  return o}
+let well,flo,rods,cells,vT,blT,pills;
+const HW=30,HD=24,WLD=10;
+const C={ox:['var(--ox-t)','var(--ox-f)','var(--ox-f)'],poly:['var(--poly-t)','var(--poly-f)','var(--poly-r)'],
+  si:['var(--si-t)','var(--si-f)','var(--si-f)'],metal:['var(--metal)','var(--metal-f)','var(--metal-f)'],
+  wl:['var(--gate-t)','var(--gate-f)','var(--gate-r)'],sg:['var(--sg-t)','var(--sg-f)','var(--sg-f)'],nit:['var(--er-f)','var(--er-m)','var(--er-m)'],sgg:['var(--sgg-t)','var(--sgg-f)','var(--sgg-r)']};
+function pickCell(i){const w=Math.floor(i/4);if(busy)return;if(wl!==w){wl=w;resetPgm();R.res=null}showInfo(i);update()}
+function pickWL(w){if(busy)return;if(wl!==w){wl=w;resetPgm();R.res=null}update()}
+function rng(seed){let s=seed*9301+49297;return()=>{s=(s*16807)%2147483647;return(s%100000)/100000}}
+const EMAX=54,EPOS=[...Array(16)].map((_,i)=>{const r=rng(i+11),a=[];
+  for(let k=0;k<EMAX;k++)a.push({x:(r()*2-1)*(HW-3),y:(r()*2-1)*(HD-3),z:Z.t1+1.8+r()*(Z.n1-Z.t1-3.6),k:Math.floor(r()*1e6)});
+  a.sort((p,q)=>p.k-q.k).forEach((p,j)=>p.rank=j);return a});
+function nitColor(v,shade){const t=Math.max(-1,Math.min(1,v/3)),N=[228,222,212],B=[40,104,214],Rr=[216,46,36],T=t<0?B:Rr,a=Math.abs(t);
+  return`rgb(${N.map((c,j)=>Math.round((c+(T[j]-c)*a)*(shade||1))).join(',')})`}
+function bar(par,y,hd,z0,z1,c,op,segs){
+  const xs=segs||[[125,585]],out=[];
+  xs.forEach(([x0,x1])=>{const o=box(par,x0,x1,y-hd,y+hd,z0,z1,c);if(op!=null)o.all.forEach(f=>f.setAttribute('fill-opacity',op));out.push(o)});return out}
+function prism(par,P,y0,y1,c,noCaps){
+  const o={sides:[],all:[]},n=P.length;let cx=0,cz=0;P.forEach(p=>{cx+=p[0]/n;cz+=p[1]/n});const ym=(y0+y1)/2;
+  const add=(q,nn,ctr,f,isTop)=>{if(facing(nn,ctr)<=0)return;const e=poly(par,q,{fill:f});o.all.push(e);if(isTop)o.top=e;else o.sides.push(e)};
+  for(let k=0;k<n;k++){const a=P[k],b=P[(k+1)%n],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz),nn=[dz/L,0,-dx/L];
+    const isTop=nn[2]>.9;add([[a[0],y0,a[1]],[b[0],y0,b[1]],[b[0],y1,b[1]],[a[0],y1,a[1]]],nn,[(a[0]+b[0])/2,ym,(a[1]+b[1])/2],isTop?c[0]:c[2],isTop)}
+  if(!noCaps){add(P.map(p=>[p[0],y1,p[1]]),[0,1,0],[cx,y1,cz],c[1]);add(P.map(p=>[p[0],y0,p[1]]),[0,-1,0],[cx,y0,cz],c[1])}
+  return o}
+function buildScene(){
+  setCam();A.innerHTML='';
+  const UP=CAM[2]>25,seq=a=>(UP?a:a.slice().reverse()).forEach(f=>f());
+  const defs=el('defs',{},A),rg=el('radialGradient',{id:'eg',cx:'35%',cy:'32%',r:'70%'},defs);
+  el('stop',{offset:'0%','stop-color':'#E8F0FF'},rg);el('stop',{offset:'45%','stop-color':'#3C6FD6'},rg);el('stop',{offset:'100%','stop-color':'#0A2560'},rg);
+  flo=[];rods={};cells=new Array(16);vT={};blT=[];pills=[];
+  const L=[],lab=[],add=(x,y,z,fn)=>L.push({d:view(x,y,z)[2],fn});
+  const WC=['var(--well-t)','var(--well-f)','var(--well-r)'];
+  const ZB=-22,AT=26,AB=33,XL=118,XR=592,PY0=40,PY1=628,STC=['var(--sti-t)','var(--sti-f)','var(--sti-f)'],NPC=['var(--np-t)','var(--np-f)','var(--np-f)'];
+  const ND=8,nw=AT+(AB-AT)*ND/(Z.ch-ZB);
+  const cellSegs=[],gapSegs=[[125,BX[0]-HW]];
+  BX.forEach((x,b)=>{cellSegs.push([x-HW,x+HW]);gapSegs.push([x+HW,b<3?BX[b+1]-HW:585])});
+  const stBase=()=>LYW('pw',()=>{well=[box(A,XL,XR,34,634,-46,ZB,WC)]});
+  const stActive=()=>{const PR=[];
+    BX.forEach(x=>PR.push({d:view(x,330,-8)[2],fn:()=>{const act=()=>LYW('pw',()=>well.push(prism(A,[[x-AB,ZB],[x+AB,ZB],[x+AT,Z.ch],[x-AT,Z.ch]],PY0,PY1,WC)));
+      if(UP){act();sdTop(x)}else{sdFull(x);act()}}}));
+    for(let k=0;k<=4;k++){const Lb=k?BX[k-1]+AB:XL,Lt=k?BX[k-1]+AT:XL,Rb=k<4?BX[k]-AB:XR,Rt=k<4?BX[k]-AT:XR;
+      PR.push({d:view((Lt+Rt)/2,330,-8)[2],fn:()=>LYW('sti',()=>prism(A,[[Lb,ZB],[Rb,ZB],[Rt,Z.ch],[Lt,Z.ch]],PY0,PY1,STC))})}
+    PR.sort((a,b)=>b.d-a.d).forEach(o=>o.fn())};
+  const SDR=[[40,86],[134,176],[224,266],[314,356],[404,446],[494,536],[584,628]],zt=Z.ch+.05,zb=Z.ch-ND;
+  const sdTop=x=>LYW('np',()=>SDR.forEach(([a,c])=>{
+    [[[x+nw,zb],[x+AT,zt]],[[x-AT,zt],[x-nw,zb]]].forEach(([p,q])=>{const dx=q[0]-p[0],dz=q[1]-p[1],L=Math.hypot(dx,dz),nn=[dz/L,0,-dx/L];
+      if(facing(nn,[(p[0]+q[0])/2,(a+c)/2,(p[1]+q[1])/2])>0)poly(A,[[p[0],a,p[1]],[q[0],a,q[1]],[q[0],c,q[1]],[p[0],c,p[1]]],{fill:NPC[2]})});
+    poly(A,[[x-AT,a,zt],[x+AT,a,zt],[x+AT,c,zt],[x-AT,c,zt]],{fill:NPC[0]});
+    if(a===PY0&&facing([0,-1,0],[x,a,Z.ch-4])>0)poly(A,[[x-nw,a,zb],[x+nw,a,zb],[x+AT,a,zt],[x-AT,a,zt]],{fill:NPC[1]});
+    if(c===PY1&&facing([0,1,0],[x,c,Z.ch-4])>0)poly(A,[[x-nw,c,zb],[x+nw,c,zb],[x+AT,c,zt],[x-AT,c,zt]],{fill:NPC[1]})}));
+  const sdFull=x=>LYW('np',()=>SDR.forEach(([a,c])=>prism(A,[[x-nw,zb],[x+nw,zb],[x+AT,zt],[x-AT,zt]],a,c,NPC)));
+  const stFlow=()=>BX.forEach((x,b)=>{const a=pj(x,60,Z.ch),c=pj(x,626,Z.ch);
+    flo[b]=el('line',{x1:a[0],y1:a[1],x2:c[0],y2:c[1],stroke:'var(--flow)','stroke-width':4*Math.min(2,ZOOM),opacity:0,class:'flow'},A)});
+  BX.forEach((x,b)=>{
+    add(x,52,50,()=>LYW('bl',()=>box(A,x-7,x+7,46,58,Z.ch,96,C.si)));
+    const p1=pj(x,52,101),p2=pj(x,634,Z.ch),p=p1[1]<=p2[1]?p1:p2;
+    lab.push(()=>{el('text',{x:p[0],y:p[1]-18,class:'t-ink','font-size':14,'font-weight':600,'text-anchor':'middle'},A).textContent='BL'+b;
+      blT[b]=el('text',{x:p[0],y:p[1]-5,class:'t-mut','font-size':11.5,'text-anchor':'middle'},A)});
+  });
+  ROWS.forEach(([n,y])=>{
+    if(n==='CSL'){BX.forEach(x=>add(x,606,20,()=>LYW('csl',()=>box(A,x-7,x+7,599,613,Z.ch,30,C.metal))));for(let k=0;k<9;k++){const x0=125+k*51.1,x1=x0+51.1;add((x0+x1)/2,606,33,()=>LYW('csl',()=>box(A,x0,x1,598,614,30,36,C.metal)))}}
+    else if(n[0]!=='W'){const segs=BX.map(x=>[x-HW,x+HW]);add(355,y,18,()=>LYW('sg',()=>seq([
+      ()=>bar(A,y,HD,Z.ch,Z.ch+4,C.ox,null,segs),()=>bar(A,y,HD,Z.ch+4,24,C.sgg,null,segs),()=>{rods[n]=bar(A,y,WLD,24,32,C.sg)[0]}])))}
+    else{
+      const w=+n[2];
+      add(355,y,25,()=>{
+        const stCells=()=>{LYW('nit',()=>bar(A,y,HD,Z.t1,Z.n1,['var(--nit-gap)','var(--nit-gap)','var(--nit-gap)'],.5,gapSegs));
+        BX.forEach((x,b)=>{
+          const i=w*4+b,g=el('g',{class:'cell',tabindex:0,role:'button','aria-label':`WL${w} BL${b} 셀`},A);
+          const nit=LYW('nit',()=>box(g,x-HW,x+HW,y-HD,y+HD,Z.t1,Z.n1,C.nit));nit.all.forEach(f=>f.setAttribute('fill-opacity',.6));
+          const es=EPOS[i].map(p=>({p,d:view(x+p.x,y+p.y,p.z)[2]})).sort((a,c)=>c.d-a.d).map(({p})=>{
+            const q=pj(x+p.x,y+p.y,p.z);return{rank:p.rank,e:el('circle',{cx:q[0].toFixed(1),cy:q[1].toFixed(1),r:Math.abs(2.1*sc(x+p.x,y+p.y,p.z)).toFixed(2),fill:'url(#eg)'},g)}});
+          let best=null,bd=-1e9;const zm=(Z.t1+Z.n1)/2;
+          [[[1,0,0],[x+HW,y-HD],[x+HW,y+HD]],[[-1,0,0],[x-HW,y+HD],[x-HW,y-HD]],[[0,1,0],[x-HW,y+HD],[x+HW,y+HD]],[[0,-1,0],[x+HW,y-HD],[x-HW,y-HD]]]
+            .forEach(([nn,a,c])=>{const f=facing(nn,[(a[0]+c[0])/2,(a[1]+c[1])/2,zm]);if(f>bd){bd=f;best=[a,c]}});
+          const tun=el('g',{class:'tun'},g);
+          [.25,.5,.75].forEach((t,k)=>{const px=best[0][0]+(best[1][0]-best[0][0])*t,py=best[0][1]+(best[1][1]-best[0][1])*t,a=pj(px,py,Z.ch+1),c=pj(px,py,zm);
+            el('circle',{cx:a[0],cy:a[1],r:(2.6*Math.min(1.6,ZOOM)).toFixed(2),fill:'url(#eg)',style:`--tx:${(c[0]-a[0]).toFixed(1)}px;--ty:${(c[1]-a[1]).toFixed(1)}px;animation-delay:${k*.1}s`},tun)});
+          g.addEventListener('click',()=>pickCell(i));
+          g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pickCell(i)}});
+          g.addEventListener('pointerenter',()=>{if(!gest)showInfo(i)});
+          cells[i]={nit,es,tun};
+          const pp=pj(x,y,UP?Z.w1+4:-50);
+          lab.push({d:view(x,y,Z.w1)[2],fn:()=>{const gp=el('g',{'pointer-events':'none'},A);
+            const r=el('rect',{x:pp[0]-25,y:pp[1]-9,width:50,height:18,rx:9,fill:'var(--panel)','fill-opacity':.92,'stroke-width':1.4},gp);
+            const t=el('text',{x:pp[0],y:pp[1]+4,class:'t-ink','font-size':11,'font-weight':600,'text-anchor':'middle'},gp);
+            pills[i]={r,t}}});
+        })};
+        const nog=()=>{const g=document.createElementNS(NS,'g');g.setAttribute('pointer-events','none');A.appendChild(g);return g};
+        seq([
+          ()=>LYW('tox',()=>bar(A,y,HD,Z.ch,Z.t1,C.ox,.55)),
+          stCells,
+          ()=>LYW('box',()=>bar(nog(),y,HD,Z.n1,Z.b1,C.ox,.22)),
+          ()=>LYW('poly',()=>bar(nog(),y,HD,Z.b1,Z.g1,C.poly,.28)),
+          ()=>{const rg=el('g',{class:'cell'},A);rods[n]=LYW('wl',()=>bar(rg,y,WLD,Z.g1,Z.w1,C.wl,.5))[0];rg.addEventListener('click',()=>pickWL(w))}]);
+      });
+    }
+    const z=n==='CSL'?36:n[0]==='W'?Z.w1:32,a=pj(115,y,z),c=pj(595,y,z),left=a[0]<=c[0]?a:c;
+    lab.push(()=>{el('text',{x:left[0]-8,y:left[1]-1,class:'t-ink','font-size':13.5,'font-weight':600,'text-anchor':'end'},A).textContent=n;
+      vT[n]=el('text',{x:left[0]-8,y:left[1]+13,class:'t-mut','font-size':12,'text-anchor':'end'},A)});
+  });
+  const stRows=()=>L.sort((a,b)=>b.d-a.d).forEach(o=>o.fn());
+  const stBL=()=>BX.map(x=>({x,d:view(x,330,62)[2]})).sort((a,b)=>b.d-a.d).forEach(({x})=>LYW('bl',()=>box(A,x-5,x+5,44,606,96,101,C.si)));
+  seq([stBase,stActive,stFlow,stRows,stBL]);
+  lab.filter(f=>typeof f!=='function').sort((a,b)=>b.d-a.d).forEach(o=>o.fn());
+  lab.filter(f=>typeof f==='function').forEach(f=>f());
+}
+/* ---------- view controls: orbit, pan, zoom ---------- */
+let gest=null,moved=false,raf=0;const ptrs=new Map();
+function redraw(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;buildScene();update()})}
+function toSvg(cx,cy){const r=A.getBoundingClientRect();return[(cx-r.left)*VBW/r.width,(cy-r.top)*VBH/r.height]}
+const unit=()=>VBW/A.getBoundingClientRect().width;
+const clampZ=z=>Math.max(.5,Math.min(4,z));
+function zoomAt(s,nz){nz=clampZ(nz);const r=nz/ZOOM,ox=330+PANX,oy=282+PANY;PANX=s[0]-r*(s[0]-ox)-330;PANY=s[1]-r*(s[1]-oy)-282;ZOOM=nz;redraw()}
+A.addEventListener('contextmenu',e=>e.preventDefault());
+A.addEventListener('pointerdown',e=>{
+  if(e.isPrimary||e.pointerType==='mouse'){ptrs.clear();gest=null}
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(ptrs.size===1){gest={mode:(e.button===2||e.button===1||e.shiftKey)?'pan':'orbit',x:e.clientX,y:e.clientY,yaw:YAWd,el:ELVd,px:PANX,py:PANY,id:e.pointerId};moved=false}
+  else if(ptrs.size===2){const[a,b]=[...ptrs.values()];const m=toSvg((a.x+b.x)/2,(a.y+b.y)/2);
+    gest={mode:'pinch',d:Math.hypot(a.x-b.x,a.y-b.y),m,zoom:ZOOM,px:PANX,py:PANY};moved=true;
+    ptrs.forEach((_,id)=>{try{A.setPointerCapture(id)}catch(_){}})}
+});
+A.addEventListener('pointermove',e=>{
+  if(!ptrs.has(e.pointerId))return;ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(!gest)return;
+  if(gest.mode==='pinch'){if(ptrs.size<2)return;const[a,b]=[...ptrs.values()],m=toSvg((a.x+b.x)/2,(a.y+b.y)/2);
+    const nz=clampZ(gest.zoom*Math.hypot(a.x-b.x,a.y-b.y)/gest.d),r=nz/gest.zoom,ox=330+gest.px,oy=282+gest.py;
+    PANX=gest.m[0]-r*(gest.m[0]-ox)-330+(m[0]-gest.m[0]);PANY=gest.m[1]-r*(gest.m[1]-oy)-282+(m[1]-gest.m[1]);ZOOM=nz;redraw();return}
+  const dx=e.clientX-gest.x,dy=e.clientY-gest.y;
+  if(!moved){if(Math.hypot(dx,dy)<5)return;moved=true;try{A.setPointerCapture(gest.id)}catch(_){}A.classList.add('dragging')}
+  if(gest.mode==='pan'){const u=unit();PANX=gest.px+dx*u;PANY=gest.py+dy*u}
+  else{YAWd=gest.yaw-dx*.4;ELVd=((gest.el+dy*.3+540)%360)-180}
+  redraw()});
+const endP=e=>{ptrs.delete(e.pointerId);if(ptrs.size===0){gest=null;A.classList.remove('dragging')}else if(gest&&gest.mode==='pinch')gest=null};
+A.addEventListener('pointerup',endP);A.addEventListener('pointercancel',endP);window.addEventListener('pointerup',endP);window.addEventListener('blur',()=>{ptrs.clear();gest=null;A.classList.remove('dragging')});
+A.addEventListener('click',e=>{if(moved){e.stopPropagation();e.preventDefault();moved=false}},true);
+A.addEventListener('wheel',e=>{e.preventDefault();zoomAt(toSvg(e.clientX,e.clientY),ZOOM*Math.exp(-e.deltaY*.0015))},{passive:false});
+A.addEventListener('keydown',e=>{if(e.target!==A)return;
+  if(e.key==='+'||e.key==='='){e.preventDefault();zoomAt([330,282],ZOOM*1.2);return}
+  if(e.key==='-'){e.preventDefault();zoomAt([330,282],ZOOM/1.2);return}
+  const k={ArrowLeft:[8,0],ArrowRight:[-8,0],ArrowUp:[0,-4],ArrowDown:[0,4]}[e.key];
+  if(!k)return;e.preventDefault();YAWd+=k[0];ELVd=((ELVd+k[1]+540)%360)-180;redraw()});
+function showInfo(i){const w=Math.floor(i/4),b=i%4;
+  $('#info').textContent=`WL${w} / BL${b}: Vth ${fmt(S.vth[i])}, 기록된 데이터 ${S.data[i]}, 산화막 누설 계수 ×${LEAK[i].toFixed(1)}${LEAK[i]>1.5?' (약한 셀)':''}. 아래부터 터널 산화막, 나이트라이드(전하 트랩), 블로킹 산화막, 폴리 게이트, 그 위에 WL.`}
+/* ---------- rendering ---------- */
+function bias(){
+  const m={},W=n=>'WL'+n;let bl=[];
+  if(op==='program'){
+    const tg=pgmTargets();m.DSL='2.5 V';m.GSL='0 V';m.CSL='1.5 V';
+    for(let i=0;i<4;i++)m[W(i)]=i===wl?`${(P.vpgm??P.start).toFixed(1)} V`:`${P.vpass.toFixed(1)} V`;
+    bl=[0,1,2,3].map(b=>tg.includes(b)?'0 V':'8 V');m.PW='0 V';
+  }else if(op==='erase'){
+    m.DSL=m.GSL=m.CSL='플로팅';for(let i=0;i<4;i++)m[W(i)]='0 V';bl=Array(4).fill('플로팅');m.PW=E.v.toFixed(1)+' V';
+  }else if(op==='read'){
+    m.DSL=m.GSL='4.5 V';m.CSL='0 V';for(let i=0;i<4;i++)m[W(i)]=i===wl?fmt1(R.vr):`${R.vp.toFixed(1)} V`;bl=Array(4).fill('1 V');m.PW='0 V';
+  }else if(op==='manual'){
+    const f=v=>fmt1(v);m.DSL=f(M.dsl);m.GSL=f(M.gsl);m.CSL=f(M.csl);
+    for(let i=0;i<4;i++)m[W(i)]=f(flash==='m'&&flashK===i?M.wlP[i]:M.wlB[i]);
+    bl=M.bl.map(f);m.PW=f(flash==='m'&&flashK==='PW'?M.pwP:M.pw);
+  }else{ROWS.forEach(([n])=>m[n]='off');bl=Array(4).fill('off');m.PW='off'}
+  ROWS.forEach(([n])=>{if(!vT[n])return;vT[n].textContent=m[n];const v=parseFloat(m[n].replace('−','-'));vT[n].setAttribute('style',v>=10?'fill:var(--hv);font-weight:600':'')});
+  blT.forEach((t,b)=>t.textContent=bl[b]);
+  const pw=parseFloat(m.PW.replace('−','-'));$('#pwV').textContent=m.PW;$('#pwV').className=pw>=5?'err':'';
+}
+function update(){
+  bias();
+  const tgNow=flash==='pgm'?pgmTargets():[];
+  ROWS.forEach(([n])=>{const r=rods[n];if(!r)return;const isW=n[0]==='W',w=isW?+n[2]:-1;
+    const on=isW&&(op==='program'||op==='read')&&w===wl,hot=isW&&((flash==='pgm'&&w===wl)||(flash==='m'&&flashK===w));
+    if(r.top)r.top.setAttribute('fill',hot?'var(--hv)':on?'var(--gate-hl)':isW?'var(--gate-t)':'var(--sg-t)');
+    r.sides.forEach(f=>f.setAttribute('fill',hot?'var(--hv)':isW?'var(--gate-f)':'var(--sg-f)'));
+    r.all.forEach(f=>{f.setAttribute('stroke',on?'var(--acc)':'var(--edge)');f.setAttribute('stroke-width',on?1.8:.7)})});
+  const wh=flash==='ers'||(flash==='m'&&flashK==='PW');
+  well.forEach(o=>{o.sides.forEach(f=>f.setAttribute('fill',wh?'var(--hv)':f.getAttribute('data-r')||'var(--well-f)'));
+    if(o.top){o.top.setAttribute('fill',wh?'var(--hv)':'var(--well-t)');o.top.setAttribute('stroke',wh?'var(--hv)':'var(--edge)')}});
+  cells.forEach((c,i)=>{if(!c)return;const v=S.vth[i],w=Math.floor(i/4),b=i%4,isP=v>=0,st=isP?'var(--pg-s)':'var(--er-s)';
+    c.nit.all.forEach(f=>{f.setAttribute('fill',nitColor(v,f===c.nit.top?1:.86));f.setAttribute('stroke',nitColor(v,.7))});
+    const n=Math.max(0,Math.min(EMAX,Math.round((v+3)*9)));c.es.forEach(o=>o.e.setAttribute('visibility',o.rank<n?'visible':'hidden'));
+    const p=pills[i];if(p){p.t.textContent='Vt '+(v>=0?'+':'−')+Math.abs(v).toFixed(2);p.r.setAttribute('stroke',nitColor(v,.8));
+      const bad=(v<0?1:0)!==S.data[i];p.t.setAttribute('style',bad?'fill:var(--hv)':'')}
+    let tm='';
+    if(flash==='pgm'&&w===wl&&tgNow.includes(b))tm=' up';else if(flash==='ers')tm=' dn';else if(flash==='m'&&tunMap[i])tm=' '+(tunMap[i]==='up'?'up':'dn');
+    c.tun.setAttribute('class','tun'+tm)});
+  const flows=op==='read'&&R.res?R.res.map(r=>r.on):op==='manual'&&M.sense?M.sense.map(r=>r.on):[0,0,0,0];
+  flo.forEach((f,b)=>f.setAttribute('opacity',flows[b]?1:0));
+  pbBtns.forEach((btn,b)=>{let txt='–',cls='';
+    if(op==='program'){txt=String(buf[b]);cls=buf[b]===0?'sel':''}
+    else if(op==='read'&&R.res){txt=String(R.res[b].bit);cls=R.res[b].err?'bad':''}
+    else if(op==='manual'&&M.sense){txt=M.sense[b].on?'1':'0'}
+    btn.querySelector('.d').textContent=txt;btn.className='pbb '+cls;btn.disabled=op!=='program'||busy});
+  $('#pbCap').textContent=op==='program'?'눌러서 0/1 전환':op==='read'&&R.res?'읽은 값':op==='manual'&&M.sense?'감지 결과 (1 = 전류 흐름)':'';
+  dots.innerHTML='';const bins={};
+  S.vth.map((v,i)=>({v,i})).sort((a,b)=>a.v-b.v).forEach(({v,i})=>{
+    const k=Math.round(v*5),h=bins[k]=(bins[k]||0)+1,bad=(v<0?1:0)!==S.data[i];
+    el('circle',{cx:dx(v),cy:118-h*9,r:4,fill:bad?'var(--hv)':S.data[i]?'var(--er-s)':'var(--pg-s)'},dots)});
+  const rv=op==='read'?R.vr:0;rdL.setAttribute('x1',dx(rv));rdL.setAttribute('x2',dx(rv));rdT.setAttribute('x',dx(rv));rdT.textContent='읽기 '+fmt1(rv);
+  const showV=op==='program';vfL.setAttribute('opacity',showV?1:0);vfT.setAttribute('opacity',showV?1:0);
+  vfL.setAttribute('x1',dx(P.verify));vfL.setAttribute('x2',dx(P.verify));vfT.setAttribute('x',dx(P.verify)+4);vfT.textContent='verify '+P.verify.toFixed(1)+'V';
+  document.querySelectorAll('.tabs button').forEach(t=>t.setAttribute('aria-selected',t.dataset.op===op));
+  document.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==op);
+  $('#wlField').hidden=!(op==='program'||op==='read');
+  document.querySelectorAll('#wlSeg button').forEach((x,w)=>x.classList.toggle('on',w===wl));
+  document.querySelectorAll('button').forEach(x=>{if(x.closest('.tabs')||x.id==='resetAll'||x.closest('#wlSeg')||x.closest('[data-panel]'))x.disabled=busy});
+  $('#zoomV').textContent=Math.round(ZOOM*100)+'%';
+  stats();
+}
+function stats(){
+  statsBase();
+  if(op!=='manual')return;
+  const k=M.last??wl,{Vg,Vw}=k==='PW'?pulseLevels('PW'):pulseLevels(k),ch=chanPot(Vg,Vw);
+  let h=`<b>${k==='PW'?'P-well':'WL'+k} 펄스 시 채널 상태</b><br>`+ch.map((c,b)=>`BL${b}: 채널 ${c.v.toFixed(1)} V (${c.s})`).join('<br>');
+  if(k!=='PW'){h+=`<br><b>WL${k} 셀의 산화막 전압 Vox = Vg − Vch</b><br>`+ch.map((c,b)=>{const vox=Vg[k]-c.v,t=vox-17.6;
+    return`BL${b}: ${vox.toFixed(1)} V${vox>=16?' (터널링으로 프로그램)':vox>=12?' (약한 디스터브)':' (변화 거의 없음)'}`}).join('<br>')}
+  if(M.sense)h+='<br><b>전류 감지</b><br>'+M.sense.map((r,b)=>`BL${b}: ${r.on?'<span class="ok">전류 흐름 → 1</span>':'차단 → 0 ('+r.why[0]+')'}`).join('<br>');
+  $('#mStat').innerHTML=h;
+  drawTiming();
+}
+/* ---------- distribution ---------- */
+const D=$('#dist');
+const dx=v=>20+(Math.max(-4,Math.min(6,v))+4)*38;
+el('line',{x1:20,y1:118,x2:400,y2:118,stroke:'var(--muted)'},D);
+for(let v=-4;v<=6;v+=2)el('text',{x:dx(v),y:136,class:'t-mut','font-size':12,'text-anchor':'middle'},D).textContent=v+'V';
+const rdL=el('line',{y1:22,y2:118,stroke:'var(--flow)','stroke-width':1.6,'stroke-dasharray':'4 3'},D);
+const rdT=el('text',{y:16,class:'t-mut','font-size':11.5,'text-anchor':'middle'},D);
+const vfL=el('line',{y1:30,y2:118,stroke:'var(--muted)','stroke-dasharray':'2 3'},D);
+const vfT=el('text',{y:26,class:'t-mut','font-size':11.5,'text-anchor':'start'},D);
+const dots=el('g',{},D);
+
+/* ---------- physics ---------- */
+function resetPgm(){P.vpgm=null;P.pulses=0;P.done=false;P.fail=false}
+function pgmTargets(){return [0,1,2,3].filter(b=>buf[b]===0&&S.vth[wl*4+b]<P.verify)}
+function programPulse(){
+  if(P.vpgm===null){P.vpgm=P.start;P.pulses=0;P.done=false;P.fail=false;
+    buf.forEach((d,b)=>{const i=wl*4+b;if(d===0)S.data[i]=0;else if(S.data[i]===0)log(`BL${b}: 이미 프로그램된 셀은 1로 되돌릴 수 없습니다. 블록 소거가 필요합니다.`)})}
+  const tg=pgmTargets();
+  if(!tg.length){P.done=true;log(`WL${wl}: 프로그램할 셀이 없거나 모두 verify 통과`);return false}
+  if(P.pulses>=20){P.fail=true;log(`WL${wl}: 최대 펄스 20회 초과, 프로그램 실패`);return false}
+  const vch=.75*P.vpass;
+  for(let b=0;b<4;b++){
+    const i=wl*4+b,isT=tg.includes(b);
+    if(isT){S.vth[i]=Math.max(S.vth[i],P.vpgm-17.6+OFF[i]);S.age[i]=0}
+    else S.vth[i]=Math.min(6,S.vth[i]+.04*Math.exp((P.vpgm-vch-12)/1.2));
+    if(isT)for(let w=0;w<4;w++){if(w===wl)continue;const j=w*4+b;S.vth[j]=Math.min(6,S.vth[j]+.03*Math.exp((P.vpass-11)/.8))}
+  }
+  P.pulses++;const cur=P.vpgm;P.vpgm=+(P.vpgm+P.step).toFixed(2);
+  const left=pgmTargets(),passed=tg.filter(b=>!left.includes(b));
+  log(`펄스 ${P.pulses}: WL${wl} = ${cur.toFixed(1)} V${passed.length?`, verify 통과 BL${passed.join(', BL')}`:''}`);
+  if(!left.length){P.done=true;log(`WL${wl} 페이지 프로그램 완료 (${P.pulses}회 펄스)`)}
+  else if(P.pulses>=20){P.fail=true;log(`WL${wl}: 최대 펄스 20회 초과, 프로그램 실패`)}
+  return left.length>0&&!P.fail;
+}
+function erasePulse(){
+  const rate=.7*Math.exp((E.v-20)/1.6);
+  for(let i=0;i<16;i++){S.vth[i]=Math.max(-4.2+OFF[i]*.5,S.vth[i]-rate*(S.vth[i]>0?1.3:1));S.data[i]=1;S.age[i]=0}
+  E.pulses++;resetPgm();R.res=null;
+  const pass=S.vth.every(v=>v<=-1);
+  log(`소거 펄스 ${E.pulses}: P-well ${E.v.toFixed(1)} V, 최고 Vth ${fmt(Math.max(...S.vth))}${pass?' (verify 통과)':''}`);
+  return !pass;
+}
+function readPage(n){
+  const res=[];
+  for(let b=0;b<4;b++){
+    const i=wl*4+b;let block=false;
+    for(let w=0;w<4;w++)if(w!==wl&&S.vth[w*4+b]>R.vp-.5)block=true;
+    const on=S.vth[i]<R.vr&&!block,bit=on?1:0;
+    res.push({on,bit,err:bit!==S.data[i],block});
+  }
+  const d=.12*Math.log10(1+n*Math.exp((R.vp-6)/.5)/50);
+  for(let w=0;w<4;w++)if(w!==wl)for(let b=0;b<4;b++){const j=w*4+b;if(S.vth[j]<1)S.vth[j]+=d}
+  S.reads+=n;R.res=res;
+  const e=res.filter(r=>r.err).length;
+  log(`WL${wl} 읽기${n>1?` ${n.toLocaleString()}회`:''}: ${res.map(r=>r.bit).join('')}${e?`, 오류 ${e}비트`:', 오류 없음'}`);
+}
+function bake(h,label){
+  const af=Math.exp(1.1/8.617e-5*(1/298.15-1/(T.temp+273.15)));
+  for(let i=0;i<16;i++)if(S.vth[i]>-.5){const a0=S.age[i],a1=a0+h*af;S.vth[i]-=.11*LEAK[i]*(Math.log10(1+a1)-Math.log10(1+a0));S.age[i]=a1}
+  S.hours+=h;R.res=null;
+  log(`${T.temp} °C에서 ${label} 보관 (가속 계수 ×${af<10?af.toFixed(1):Math.round(af).toLocaleString()}), 비트 오류 ${arrayErrors()}개`);
+}
+function arrayErrors(){let e=0;for(let i=0;i<16;i++)if((S.vth[i]<0?1:0)!==S.data[i])e++;return e}
+function fmtHours(h){if(!h)return '0';const y=h/8760;if(y>=1)return (Math.round(y*10)/10)+'년';const d=h/24;if(d>=30)return Math.round(d/30)+'개월';return Math.round(d)+'일'}
+
+/* ---------- manual bias ---------- */
+const M={wlB:[0,0,0,0],wlP:[18,18,18,18],bl:[0,0,0,0],dsl:0,gsl:0,csl:0,pw:0,pwP:20,sense:null,last:null};
+let flashK=null,tunMap={};
+function chanPot(Vg,Vw){return[0,1,2,3].map(b=>{
+  if(Vw>=5)return{v:Vw,s:'P-well 전압을 따라감'};
+  if(M.dsl>=M.bl[b]+.7)return{v:M.bl[b],s:'DSL 켜짐, BL에 연결'};
+  if(M.gsl>=M.csl+.7)return{v:M.csl,s:'GSL 켜짐, CSL에 연결'};
+  const mean=Vg.reduce((a,c)=>a+c,0)/4;return{v:Math.max(0,Math.min(10,.75*mean)),s:'선택 트랜지스터 꺼짐, 셀프 부스팅'}})}
+function tunnel(v,vox,i){
+  if(vox>0){const t=vox-17.6+OFF[i];if(t>v)return Math.min(7,t);return vox>8?Math.min(7,v+Math.min(.5,.04*Math.exp((vox-12)/1.2))):v}
+  const e=-vox;if(e>12)return Math.max(-4.2+OFF[i]*.5,v-Math.min(3,.7*Math.exp((e-20)/1.6))*(v>0?1.3:1));return v}
+function pulseLevels(k){return{Vg:[0,1,2,3].map(w=>w===k?M.wlP[w]:M.wlB[w]),Vw:k==='PW'?M.pwP:M.pw}}
+async function manualPulse(k){
+  if(busy)return;busy=true;
+  const{Vg,Vw}=pulseLevels(k),ch=chanPot(Vg,Vw),nv=[];tunMap={};
+  for(let w=0;w<4;w++)for(let b=0;b<4;b++){const i=w*4+b,v=tunnel(S.vth[i],Vg[w]-ch[b].v,i);nv[i]=v;const d=v-S.vth[i];if(Math.abs(d)>.02)tunMap[i]=d>0?'up':'dn'}
+  M.last=k;M.sense=null;flash='m';flashK=k;update();await sleep(450);
+  const ch2=[];for(let i=0;i<16;i++){const d=nv[i]-S.vth[i];if(Math.abs(d)>.005)ch2.push(`WL${Math.floor(i/4)}/BL${i%4} ${d>0?'+':'−'}${Math.abs(d).toFixed(2)}`);
+    if(nv[i]>S.vth[i])S.age[i]=0;S.vth[i]=nv[i];S.data[i]=nv[i]>=0?0:1}
+  flash=null;flashK=null;tunMap={};busy=false;
+  log(`${k==='PW'?'P-well':'WL'+k} 펄스 ${(k==='PW'?Vw:Vg[k]).toFixed(1)} V: ${ch2.length?'Vth 변화 '+ch2.slice(0,6).join(', ')+(ch2.length>6?` 외 ${ch2.length-6}개`:''):'Vth 변화 없음'}`);
+  update()}
+function manualSense(){
+  M.sense=[0,1,2,3].map(b=>{const why=[];
+    if(M.dsl<1.5)why.push('DSL 꺼짐');if(M.gsl<1.5)why.push('GSL 꺼짐');
+    for(let w=3;w>=0;w--){const v=S.vth[w*4+b];if(M.wlB[w]<=v)why.push(`WL${w} 셀 꺼짐 (${M.wlB[w].toFixed(1)} V ≤ Vth ${v.toFixed(2)} V)`)}
+    if(M.bl[b]-M.csl<.2)why.push('BL과 CSL 전위차 없음');
+    return{on:!why.length,why}});
+  log(`전류 감지: ${M.sense.map(r=>r.on?1:0).join('')} (1 = 전류 흐름)`);update()}
+function preset(kind){
+  if(kind==='pgm'){M.wlB=[10,10,10,10];M.wlP=[18,18,18,18];M.bl=buf.map(d=>d===0?0:8);M.dsl=2.5;M.gsl=0;M.csl=1.5;M.pw=0}
+  if(kind==='read'){M.wlB=[0,1,2,3].map(w=>w===wl?0:6);M.bl=[1,1,1,1];M.dsl=4.5;M.gsl=4.5;M.csl=0;M.pw=0}
+  if(kind==='ers'){M.wlB=[0,0,0,0];M.bl=[0,0,0,0];M.dsl=0;M.gsl=0;M.csl=0;M.pw=0;M.pwP=20}
+  if(kind==='zero'){M.wlB=[0,0,0,0];M.bl=[0,0,0,0];M.dsl=0;M.gsl=0;M.csl=0;M.pw=0}
+  M.sense=null;syncInputs();update()}
+function buildManualUI(){
+  const tb=$('#mWL');tb.innerHTML='';
+  [3,2,1,0,'PW'].forEach(k=>{const tr=document.createElement('tr');
+    tr.innerHTML=`<th>${k==='PW'?'P-well':'WL'+k}</th><td><input type="number" step="0.5" min="-5" max="25" data-k="${k}" data-f="b" aria-label="${k==='PW'?'P-well':'WL'+k} 유지 전압"></td><td><input type="number" step="0.5" min="-5" max="25" data-k="${k}" data-f="p" aria-label="${k==='PW'?'P-well':'WL'+k} 펄스 전압"></td><td><button data-pulse="${k}">펄스 인가</button></td>`;
+    tb.appendChild(tr)});
+  const g=$('#mLines');g.innerHTML='';
+  [['bl0','BL0'],['bl1','BL1'],['bl2','BL2'],['bl3','BL3'],['dsl','DSL'],['gsl','GSL'],['csl','CSL']].forEach(([id,n])=>{
+    const l=document.createElement('label');l.className='vin';l.innerHTML=`<span>${n}</span><input type="number" step="0.5" min="-5" max="25" data-id="${id}" aria-label="${n} 전압"><span>V</span>`;g.appendChild(l)});
+  document.querySelectorAll('[data-panel="manual"] input').forEach(inp=>inp.addEventListener('input',()=>{
+    const v=parseFloat(inp.value);if(isNaN(v))return;const c=Math.max(-5,Math.min(25,v));
+    if(inp.dataset.id){const id=inp.dataset.id;if(id.startsWith('bl'))M.bl[+id[2]]=c;else M[id]=c}
+    else{const k=inp.dataset.k,f=inp.dataset.f;if(k==='PW'){if(f==='b')M.pw=c;else M.pwP=c}else{(f==='b'?M.wlB:M.wlP)[+k]=c}}
+    M.sense=null;update()}));
+  document.querySelectorAll('[data-pulse]').forEach(b=>b.onclick=()=>{const k=b.dataset.pulse;manualPulse(k==='PW'?'PW':+k)});
+  syncInputs()}
+function syncInputs(){
+  document.querySelectorAll('[data-panel="manual"] input').forEach(inp=>{let v;
+    if(inp.dataset.id){const id=inp.dataset.id;v=id.startsWith('bl')?M.bl[+id[2]]:M[id]}
+    else{const k=inp.dataset.k,f=inp.dataset.f;v=k==='PW'?(f==='b'?M.pw:M.pwP):(f==='b'?M.wlB:M.wlP)[+k]}
+    inp.value=v})}
+function drawTiming(){
+  const T=$('#timing');T.innerHTML='';const k=M.last??wl;
+  const isPW=k==='PW',sel=isPW?null:k,other=[0,1,2,3].find(w=>w!==sel);
+  const pV=isPW?M.pwP:M.wlP[k],selB=isPW?0:M.wlB[k],uB=M.wlB[other];
+  const blMin=Math.min(...M.bl),blMax=Math.max(...M.bl);
+  const X={s:92,bl:112,w0:140,w1:162,p0:184,p1:198,p2:300,d0:314,d1:338,e:396};
+  const lanes=isPW?[
+    ['P-well',[[X.s,M.pw],[X.p0,M.pw],[X.p1,pV],[X.p2,pV],[X.d0,M.pw],[X.e,M.pw]]],
+    ['모든 WL',[[X.s,0],[X.w0,0],[X.w1,uB],[X.d0,uB],[X.d1,0],[X.e,0]]]]:[
+    [`WL${k} (선택)`,[[X.s,0],[X.w0,0],[X.w1,selB],[X.p0,selB],[X.p1,pV],[X.p2,pV],[X.d0,0],[X.e,0]]],
+    ['비선택 WL',[[X.s,0],[X.w0,0],[X.w1,uB],[X.p2,uB],[X.d0,0],[X.e,0]]],
+    ['BL (최저)',[[X.s,0],[X.bl,blMin],[X.d1,blMin],[X.d1+14,0],[X.e,0]]],
+    ['BL (최고)',[[X.s,0],[X.bl,blMax],[X.d1,blMax],[X.d1+14,0],[X.e,0]]],
+    ['DSL',[[X.s,0],[X.bl,M.dsl],[X.d1,M.dsl],[X.d1+14,0],[X.e,0]]]];
+  const LH=40,top=24,H=top+lanes.length*LH+18;T.setAttribute('viewBox',`0 0 400 ${H}`);
+  el('rect',{x:X.p0,y:8,width:X.d0-X.p0,height:H-26,fill:'var(--hv)',opacity:.09,rx:4},T);
+  el('text',{x:(X.p0+X.d0)/2,y:18,class:'t-mut','font-size':11,'text-anchor':'middle'},T).textContent='펄스 1회 (약 10–20 μs)';
+  const vmax=Math.max(25,...lanes.flatMap(l=>l[1].map(p=>Math.abs(p[1]))));
+  lanes.forEach(([n,pt],li)=>{const base=top+(li+1)*LH;
+    el('line',{x1:X.s,y1:base,x2:X.e,y2:base,stroke:'var(--line)'},T);
+    el('text',{x:4,y:base-8,class:'t-ink','font-size':11.5,'font-weight':500},T).textContent=n;
+    el('polyline',{points:pt.map(p=>`${p[0]},${(base-p[1]/vmax*(LH-8)).toFixed(1)}`).join(' '),fill:'none',stroke:li===0?'var(--hv)':'var(--wl)','stroke-width':1.8,'stroke-linejoin':'round'},T);
+    const peak=pt.reduce((a,c)=>Math.abs(c[1])>Math.abs(a[1])?c:a,pt[0]);
+    if(peak[1])el('text',{x:Math.min(X.e,peak[0]+6),y:base-peak[1]/vmax*(LH-8)-3,class:'t-mut','font-size':10.5},T).textContent=peak[1].toFixed(1)+' V'});
+  el('text',{x:X.s,y:H-3,class:'t-mut','font-size':10.5},T).textContent='시간 →';
+}
+function statsBase(){
+  const tg=pgmTargets(),vch=.75*P.vpass;
+  $('#pStat').innerHTML=`대상: <b>WL${wl}</b>, 프로그램할 BL: <b>${buf.map((d,b)=>d===0?'BL'+b:null).filter(Boolean).join(', ')||'없음'}</b><br>`+
+    `인가한 펄스 <b>${P.pulses}</b>회, 다음 Vpgm <b>${(P.vpgm??P.start).toFixed(1)} V</b><br>`+
+    `inhibit 채널 부스팅 약 <b>${vch.toFixed(1)} V</b> (Vpass × 0.75)<br>`+
+    (P.fail?'<span class="err">최대 펄스 초과로 실패했습니다. Vpgm 시작 전압이나 스텝을 높여 보세요.</span>':
+     P.done?'<span class="ok">verify 통과, 페이지 프로그램 완료</span>':
+     tg.length?`verify 미통과: BL${tg.join(', BL')}`:'프로그램할 셀이 없습니다. 페이지 버퍼에 0을 넣으세요.')+
+    (P.vpass<9?'<br><span class="err">Vpass가 낮아 inhibit 셀의 부스팅이 약합니다. 프로그램 디스터브 위험.</span>':'')+
+    (P.vpass>11.5?'<br><span class="err">Vpass가 높아 비선택 WL 셀에 패스 디스터브가 생깁니다.</span>':'');
+  const mx=Math.max(...S.vth);
+  $('#eStat').innerHTML=`블록 최고 Vth <b>${fmt(mx)}</b>, 최저 Vth <b>${fmt(Math.min(...S.vth))}</b><br>`+
+    `이번 소거 펄스 <b>${E.pulses}</b>회, 누적 소거 완료 <b>${S.erases}</b>회<br>`+
+    (mx<=-1?'<span class="ok">erase verify 통과 (모든 셀 ≤ −1.0 V)</span>':'erase verify 미통과')+(E.state?'<br>'+E.state:'');
+  if(R.res){const e=R.res.filter(r=>r.err).length,bl=R.res.some(r=>r.block);
+    $('#rStat').innerHTML=`WL${wl} 결과: <b>${R.res.map(r=>r.bit).join(' ')}</b> (BL0→BL3)<br>기록된 값: <b>${[0,1,2,3].map(b=>S.data[wl*4+b]).join(' ')}</b><br>`+
+      (e?`<span class="err">비트 오류 ${e}개</span>`:'<span class="ok">오류 없음</span>')+
+      (bl?'<br><span class="err">비선택 셀이 Vpass로 켜지지 않아 스트링이 막혔습니다. Vpass를 올리세요.</span>':'')+
+      `<br>누적 읽기 횟수 ${S.reads.toLocaleString()}회`}
+  else $('#rStat').innerHTML=`페이지 읽기를 누르면 BL별 감지 결과가 표시됩니다.<br>누적 읽기 횟수 ${S.reads.toLocaleString()}회`;
+  const e=arrayErrors();
+  $('#tStat').innerHTML=`누적 보관 시간 <b>${fmtHours(S.hours)}</b><br>프로그램 셀 최저 Vth <b>${(()=>{const v=S.vth.filter((_,i)=>S.data[i]===0);return v.length?fmt(Math.min(...v)):'없음'})()}</b><br>`+
+    (e?`<span class="err">0 V 읽기 기준 비트 오류 ${e}개</span>`:'<span class="ok">0 V 읽기 기준 비트 오류 없음</span>');
+}
+/* ---------- controls ---------- */
+const wlSeg=$('#wlSeg');
+[0,1,2,3].forEach(w=>{const b=document.createElement('button');b.textContent='WL'+w;b.onclick=()=>{if(busy)return;wl=w;resetPgm();R.res=null;update()};wlSeg.appendChild(b)});
+document.querySelectorAll('.tabs button').forEach(t=>t.onclick=()=>{if(busy)return;op=t.dataset.op;R.res=null;update()});
+function bind(id,obj,key,f,after){const inp=$('#'+id),out=$('#o-'+id);inp.value=obj[key];out.textContent=f(obj[key]);
+  inp.addEventListener('input',()=>{obj[key]=+inp.value;out.textContent=f(obj[key]);after&&after();update()})}
+bind('start',P,'start',v=>v.toFixed(1)+' V',resetPgm);
+bind('step',P,'step',v=>v.toFixed(1)+' V');
+bind('vpass',P,'vpass',v=>v.toFixed(1)+' V');
+bind('verify',P,'verify',v=>v.toFixed(1)+' V',()=>{P.done=false});
+bind('vers',E,'v',v=>v.toFixed(1)+' V');
+bind('vr',R,'vr',fmt1,()=>{R.res=null});
+bind('vp',R,'vp',v=>v.toFixed(1)+' V',()=>{R.res=null});
+async function pulseAnim(kind,fn){flash=kind;update();await sleep(380);const r=fn();flash=null;update();return r}
+$('#pPulse').onclick=async()=>{if(busy)return;busy=true;await pulseAnim('pgm',programPulse);busy=false;update()};
+$('#pAuto').onclick=async()=>{if(busy)return;busy=true;let go=true;while(go){go=await pulseAnim('pgm',programPulse);await sleep(160)}busy=false;update()};
+$('#pReset').onclick=()=>{resetPgm();log('ISPP 펄스 상태 초기화');update()};
+$('#ePulse').onclick=async()=>{if(busy)return;busy=true;E.state='';const more=await pulseAnim('ers',erasePulse);if(!more)S.erases++;busy=false;update()};
+$('#eAuto').onclick=async()=>{if(busy)return;busy=true;E.pulses=0;E.state='';let more=true;
+  while(more&&E.pulses<12){more=await pulseAnim('ers',erasePulse);await sleep(160)}
+  if(more){E.state='<span class="err">12회 펄스로도 verify를 통과하지 못했습니다. Verase를 올려 보세요.</span>';log('소거 실패: 12회 펄스 초과')}
+  else{S.erases++;log(`블록 소거 완료 (${E.pulses}회 펄스)`)}
+  busy=false;update()};
+$('#rRead').onclick=()=>{if(busy)return;readPage(1);update()};
+$('#rMany').onclick=()=>{if(busy)return;readPage(10000);update()};
+$('#temp').onchange=e=>{T.temp=+e.target.value};
+$('#b1d').onclick=()=>{bake(24,'1일');update()};
+$('#b1m').onclick=()=>{bake(720,'1개월');update()};
+$('#b1y').onclick=()=>{bake(8760,'1년');update()};
+$('#b10y').onclick=()=>{bake(87600,'10년');update()};
+$('#resetAll').onclick=()=>{if(busy)return;fresh();resetPgm();E.pulses=0;E.state='';R.res=null;buf=[0,1,0,1];log('어레이를 초기 상태로 되돌렸습니다');update()};
+const pbBtns=[0,1,2,3].map(b=>{const btn=document.createElement('button');btn.className='pbb';btn.innerHTML=`<span class="d">0</span><span class="l">BL${b}</span>`;
+  btn.onclick=()=>{if(op!=='program'||busy)return;buf[b]^=1;resetPgm();update()};$('#pbs').appendChild(btn);return btn});
+$('#resetView').onclick=()=>{YAWd=YAW0;ELVd=ELV0;ZOOM=1;PANX=0;PANY=0;redraw()};
+$('#zin').onclick=()=>zoomAt([330,282],ZOOM*1.25);
+$('#zout').onclick=()=>zoomAt([330,282],ZOOM/1.25);
+document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>preset(b.dataset.preset));
+$('#mSense').onclick=()=>{if(!busy)manualSense()};
+const LYR=[["bl", "BL", 1], ["wl", "WL", 0.5], ["poly", "게이트", 0.28], ["box", "블로킹 산화막", 0.22], ["nit", "나이트라이드", 0.6], ["tox", "터널 산화막", 0.55], ["sg", "선택 Tr.", 1], ["csl", "CSL", 1], ["np", "S/D(n+)", 1], ["sti", "STI", 1], ["pw", "P-well", 1]];
+const lyState={},lySet={};
+LYR.forEach(([k,n,v])=>{lyState[k]=v<1;const b=document.createElement('button');b.dataset.ly=k;
+  lySet[k]=()=>{b.setAttribute('aria-pressed',lyState[k]);b.textContent=n+(lyState[k]?' · 투명':' · 불투명');A.style.setProperty('--op-'+k,lyState[k]?(v<1?v:.18):1)};
+  b.onclick=()=>{lyState[k]=!lyState[k];lySet[k]()};lySet[k]();$('#lyrow').appendChild(b)});
+[['모두 불투명',false],['모두 투명',true]].forEach(([t,f])=>{const b=document.createElement('button');b.textContent=t;
+  b.onclick=()=>LYR.forEach(([k])=>{lyState[k]=f;lySet[k]()});$('#lyrow').appendChild(b)});
+buildManualUI();
+buildScene();
+log('시작: 일부 셀이 미리 프로그램되어 있습니다');
+update();
+</script>
+</body>
+</html>
