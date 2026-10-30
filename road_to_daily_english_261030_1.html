@@ -1,0 +1,929 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Road to A1: English Town</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1f2a44; --sub:#56607a; --panel:#ffffff; --mist:#eef3f8; --line:#d6dfea;
+  --sun:#f2b705; --sun-ink:#3a2c00; --leaf:#2f8f60; --berry:#d94a6e; --sky:#9fd3f0;
+  --shadow:0 10px 30px rgba(31,42,68,.18);
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ink:#eef2fb; --sub:#a9b3c9; --panel:#1d2433; --mist:#283247; --line:#36425c;
+    --sun:#f5c431; --sun-ink:#2b2100; --leaf:#5cc690; --berry:#f07a98;
+    --shadow:0 10px 30px rgba(0,0,0,.45); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#eef2fb; --sub:#a9b3c9; --panel:#1d2433; --mist:#283247; --line:#36425c;
+  --sun:#f5c431; --sun-ink:#2b2100; --leaf:#5cc690; --berry:#f07a98;
+  --shadow:0 10px 30px rgba(0,0,0,.45); color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden}
+body{background:var(--sky);color:var(--ink);font-family:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",sans-serif;position:relative;-webkit-tap-highlight-color:transparent}
+#stage{position:absolute;inset:0}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+#stage canvas:active{cursor:grabbing}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.hidden{display:none!important}
+h1,h2,h3,.jua{font-family:"Jua","Gowun Dodum",sans-serif;font-weight:400}
+
+/* Title */
+#title{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(to bottom,rgba(159,211,240,0) 0%,rgba(20,32,58,.35) 100%)}
+.title-box{width:min(720px,100%);text-align:center}
+.logo{font-family:"Jua",sans-serif;font-size:clamp(52px,11vw,104px);line-height:.95;color:#fff;margin:0;letter-spacing:-.01em;text-shadow:0 4px 0 #1f2a44,0 10px 30px rgba(0,0,0,.25)}
+.logo small{display:block;font-size:.34em;margin-top:.35em;color:var(--sun);text-shadow:0 3px 0 #1f2a44}
+.tagline{color:#fff;font-size:17px;margin:14px 0 26px;text-shadow:0 1px 6px rgba(0,0,0,.4)}
+.paths{display:grid;grid-template-columns:1fr 1fr;gap:14px;text-align:left}
+.path{background:var(--panel);border:none;border-radius:20px;padding:20px 20px 18px;box-shadow:var(--shadow);transition:transform .15s}
+.path:hover{transform:translateY(-3px)}
+.path h2{margin:0 0 6px;font-size:26px}
+.path p{margin:0;color:var(--sub);font-size:15px;line-height:1.55}
+.path.enroll{background:var(--sun);color:var(--sun-ink)}
+.path.enroll p{color:var(--sun-ink);opacity:.8}
+.path .pill{display:inline-block;margin-top:12px;font-size:13px;padding:4px 10px;border-radius:99px;background:rgba(0,0,0,.08)}
+#resetBtn{margin-top:16px;background:none;border:none;color:#fff;text-decoration:underline;font-size:14px;opacity:.9;text-shadow:0 1px 4px rgba(0,0,0,.5)}
+@media (max-width:560px){.paths{grid-template-columns:1fr}}
+
+/* Modal */
+.modal{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(15,22,40,.45);padding:20px;z-index:20}
+.modal .card{background:var(--panel);border-radius:22px;padding:24px;width:min(420px,100%);box-shadow:var(--shadow)}
+.modal h3{margin:0 0 6px;font-size:24px}
+.modal p{margin:0 0 14px;color:var(--sub);line-height:1.55}
+.modal input{width:100%;font:inherit;font-size:18px;padding:12px 14px;border-radius:12px;border:2px solid var(--line);background:var(--mist);color:var(--ink)}
+.row{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+.btn{border:none;border-radius:12px;padding:11px 18px;font-size:16px;background:var(--mist)}
+.btn.primary{background:var(--ink);color:var(--panel)}
+
+/* HUD */
+#hud{position:absolute;inset:0;pointer-events:none}
+#hud > *{pointer-events:auto}
+#status{position:absolute;top:12px;left:12px;width:min(300px,calc(100% - 190px));background:var(--panel);border-radius:18px;padding:12px 14px;box-shadow:var(--shadow)}
+#status .top{display:flex;align-items:center;gap:8px}
+#modeTag{font-family:"Jua",sans-serif;font-size:14px;padding:3px 10px;border-radius:99px;background:var(--mist)}
+#lv{font-family:"Jua",sans-serif;font-size:20px;margin-left:auto}
+.xpbar{height:8px;border-radius:99px;background:var(--mist);margin:8px 0 2px;overflow:hidden}
+.xpbar i{display:block;height:100%;background:var(--sun);width:0;transition:width .5s}
+#xpText{font-size:12px;color:var(--sub)}
+#quest{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
+#quest b{font-family:"Jua",sans-serif;font-weight:400;font-size:17px;display:block}
+#quest span{font-size:14px;color:var(--sub);line-height:1.5;display:block;margin-top:2px}
+#mapWrap{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+#minimap{width:150px;height:150px;border-radius:18px;background:var(--panel);box-shadow:var(--shadow);display:block}
+#menuBtn{border:none;background:var(--panel);border-radius:12px;padding:8px 12px;box-shadow:var(--shadow);font-size:14px}
+#prompt{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);border:none;background:var(--ink);color:var(--panel);padding:12px 22px;border-radius:99px;font-size:17px;box-shadow:var(--shadow);font-family:"Jua",sans-serif}
+#prompt kbd{background:var(--sun);color:var(--sun-ink);border-radius:6px;padding:1px 7px;margin-right:6px;font-family:inherit}
+#joy{position:absolute;left:24px;bottom:28px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.35);border:2px solid rgba(255,255,255,.7);touch-action:none;display:none}
+#joy i{position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;background:#fff;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+@media (pointer:coarse){#joy{display:block}#prompt kbd{display:none}#prompt{left:auto;right:24px;transform:none;bottom:60px}}
+#help{position:absolute;bottom:12px;left:12px;font-size:13px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+@media (pointer:coarse){#help{display:none}}
+#toasts{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;z-index:30}
+.toast{background:var(--ink);color:var(--panel);padding:10px 18px;border-radius:99px;font-family:"Jua",sans-serif;font-size:16px;box-shadow:var(--shadow);animation:pop .3s ease-out}
+.toast.gold{background:var(--sun);color:var(--sun-ink)}
+@keyframes pop{from{transform:translateY(-10px);opacity:0}to{transform:none;opacity:1}}
+@media (max-width:560px){#status{width:calc(100% - 120px)} #minimap{width:96px;height:96px} #quest span{font-size:13px}}
+
+/* Dialogue */
+#dlg{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);width:min(680px,calc(100% - 20px));background:var(--panel);border-radius:24px;box-shadow:var(--shadow);padding:18px 18px 16px;z-index:10;max-height:calc(100% - 40px);overflow:auto}
+.who{display:flex;align-items:center;gap:12px}
+.face{width:46px;height:46px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-family:"Jua",sans-serif;font-size:22px}
+.who b{font-family:"Jua",sans-serif;font-weight:400;font-size:20px;display:block}
+.who small{color:var(--sub);font-size:13px}
+.who .tools{margin-left:auto;display:flex;gap:6px}
+.tool{border:none;background:var(--mist);border-radius:10px;padding:7px 10px;font-size:14px}
+.tool[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
+#youLine{margin:14px 0 0;font-size:15px;color:var(--sub);text-align:right}
+#youLine:empty{display:none}
+#npcLine{font-size:21px;line-height:1.45;margin:12px 0 0;font-family:"Gowun Dodum",sans-serif}
+#npcLine em{color:var(--sub);font-style:normal}
+#koLine{margin:6px 0 0;color:var(--sub);font-size:15px;line-height:1.5}
+#choices{display:grid;gap:8px;margin-top:14px}
+.choice{text-align:left;border:2px solid var(--line);background:var(--panel);border-radius:14px;padding:12px 14px;font-size:17px;display:flex;gap:10px;align-items:flex-start}
+.choice:hover:not(:disabled){border-color:var(--ink)}
+.choice .n{font-family:"Jua",sans-serif;color:var(--sub);flex:none}
+.choice.wrong{border-color:var(--berry);opacity:.6;text-decoration:line-through}
+.choice.right{border-color:var(--leaf);background:var(--mist)}
+.choice.close{justify-content:center;background:var(--ink);color:var(--panel);border-color:var(--ink);font-family:"Jua",sans-serif}
+#fb{margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--mist);font-size:15px;line-height:1.5;border-left:4px solid var(--berry)}
+#fb.note{border-left-color:var(--sun)}
+#fb:empty{display:none}
+#dlgMeta{margin-top:10px;font-size:12px;color:var(--sub);text-align:right}
+@media (prefers-reduced-motion:reduce){.path,.toast{transition:none;animation:none}}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+
+<div id="hud" class="hidden">
+  <div id="status">
+    <div class="top"><span id="modeTag">학교 입학</span><span id="lv">Lv.0</span></div>
+    <div class="xpbar"><i id="xpFill"></i></div>
+    <div id="xpText">0 / 50 XP</div>
+    <div id="quest"><b id="qTitle"></b><span id="qDesc"></span></div>
+  </div>
+  <div id="mapWrap">
+    <canvas id="minimap" width="300" height="300" aria-label="마을 지도"></canvas>
+    <button id="menuBtn">처음 화면으로</button>
+  </div>
+  <div id="joy" aria-hidden="true"><i id="knob"></i></div>
+  <button id="prompt" class="hidden"><kbd>E</kbd><span id="promptText">대화하기</span></button>
+  <div id="help">이동: WASD 또는 방향키 · 시점: 화면 드래그 · 확대/축소: 마우스 휠 · 대화: E 또는 Space · 선택지: 1~3</div>
+</div>
+
+<div id="dlg" class="hidden" role="dialog" aria-live="polite">
+  <div class="who">
+    <div class="face" id="face">S</div>
+    <div><b id="whoName"></b><small id="whoRole"></small></div>
+    <div class="tools">
+      <button class="tool" id="speakBtn" title="영어 문장 듣기">🔊 듣기</button>
+      <button class="tool" id="koBtn" aria-pressed="false">해석</button>
+    </div>
+  </div>
+  <p id="youLine"></p>
+  <p id="npcLine"></p>
+  <p id="koLine" class="hidden"></p>
+  <div id="choices"></div>
+  <div id="fb"></div>
+  <div id="dlgMeta"></div>
+</div>
+
+<div id="title">
+  <div class="title-box">
+    <h1 class="logo">Road to A1<small>English Town</small></h1>
+    <p class="tagline">어학당이 있는 영어 마을에서 사람들과 직접 말해 보세요.</p>
+    <div class="paths">
+      <button class="path" id="exploreBtn">
+        <h2>게임 둘러보기</h2>
+        <p>스토리 없이 마을을 자유롭게 걸어 다녀요. 아무 사람에게나 말을 걸어 상황극을 연습할 수 있어요.</p>
+        <span class="pill">경험치 없음</span>
+      </button>
+      <button class="path enroll" id="enrollBtn">
+        <h2 id="enrollTitle">학교 입학하기</h2>
+        <p>전담 도우미 학생 Mia와 함께 학교부터 가서 차례로 퀘스트를 받아요. 퀘스트를 미루고 돌아다녀도 괜찮아요.</p>
+        <span class="pill" id="enrollPill">퀘스트 7개</span>
+      </button>
+    </div>
+    <button id="resetBtn" class="hidden">기록 지우고 처음부터 입학하기</button>
+  </div>
+</div>
+
+<div id="nameModal" class="modal hidden">
+  <div class="card">
+    <h3>입학 원서</h3>
+    <p>마을 사람들이 부를 영어 이름을 적어 주세요.</p>
+    <input id="nameInput" maxlength="16" placeholder="예: Alex" autocomplete="off">
+    <div class="row"><button class="btn" id="nameCancel">취소</button><button class="btn primary" id="nameOk">입학하기</button></div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s);
+
+/* ================= DATA ================= */
+const NPCS=[
+  {id:'mia',name:'Mia',role:'전담 도우미 학생',color:'#e86a92',hair:'#3b2416',pos:[2.6,25.5],rot:Math.PI,buddy:true},
+  {id:'parker',name:'Ms. Parker',role:'메이플 어학원 교무실',color:'#4f6bd8',hair:'#c9a46a',pos:[0,-28.2],rot:0},
+  {id:'sam',name:'Sam',role:'카페 바리스타',color:'#8a5a3c',hair:'#1e1e1e',pos:[-22,-8.2],rot:0},
+  {id:'brown',name:'Mr. Brown',role:'도서관 사서',color:'#3f7d5c',hair:'#9a9a9a',pos:[-22,8.2],rot:Math.PI},
+  {id:'emma',name:'Emma',role:'옷 가게 직원',color:'#d9564a',hair:'#e2b04a',pos:[22,-8.2],rot:0},
+  {id:'leo',name:'Leo',role:'공원 벤치의 학생',color:'#f0a830',hair:'#5a3a22',pos:[24,20.4],rot:Math.PI,seated:true},
+  {id:'tom',name:'Tom',role:'길 잃은 관광객',color:'#2aa3a3',hair:'#7a4a2a',pos:[5.5,5.5],rot:-Math.PI*0.75}
+];
+
+const IDLE={
+  parker:['Good morning! The office is open until five.','좋은 아침이에요! 교무실은 5시까지 열려 있어요.'],
+  sam:['Hi! Our coffee is the best in town.','안녕하세요! 우리 커피가 이 동네 최고예요.'],
+  brown:['Welcome to the library. Please be quiet inside.','도서관에 오신 걸 환영해요. 안에서는 조용히 해 주세요.'],
+  emma:['Welcome! Take your time and look around.','어서 오세요! 천천히 둘러보세요.'],
+  leo:['*Leo is reading a book. He looks busy right now.*','레오가 책을 읽고 있다. 지금은 바빠 보인다.'],
+  tom:['*Tom is looking at a map. He looks confused.*','톰이 지도를 보고 있다. 헷갈리는 표정이다.']
+};
+
+const D={
+ intro:{npc:'mia',steps:[
+  {en:'Hi! You must be {name}. I’m Mia. I’ll be your buddy at the language school.',ko:'안녕! 네가 {name}구나. 난 미아야. 어학원에서 네 도우미 학생이 될 거야.',c:[
+    {t:'Nice to meet you, Mia.',ok:1},
+    {t:'Goodbye, Mia.',fb:'Goodbye는 헤어질 때 하는 인사야. 처음 만났을 땐 Nice to meet you!'},
+    {t:'I’m fine, thank you.',fb:'How are you?에 대한 대답이야. 처음 만난 사이엔 Nice to meet you.'}]},
+  {en:'Nice to meet you too! First, we need to go to the school. You have to register.',ko:'나도 반가워! 먼저 학교에 가야 해. 입학 등록을 해야 하거든.',c:[
+    {t:'Okay! Let’s go.',ok:1},
+    {t:'No, thank you.',fb:'정중한 거절 표현이야. 지금은 같이 가자고 대답해 보자.'},
+    {t:'Let’s going.',fb:'Let’s 뒤에는 동사원형! Let’s go.'}]}
+ ],end:['Follow me! The school is to the north. Look for Ms. Parker.','따라와! 학교는 북쪽에 있어. 파커 선생님을 찾아.']},
+
+ register:{npc:'parker',steps:[
+  {en:'Good morning! Welcome to Maple Language School. How can I help you?',ko:'좋은 아침이에요! 메이플 어학원에 오신 걸 환영해요. 무엇을 도와드릴까요?',c:[
+    {t:'I’d like to register for a class.',ok:1},
+    {t:'I’d like a coffee, please.',fb:'여기는 카페가 아니라 학교 교무실이야.'},
+    {t:'I’m just looking, thanks.',fb:'가게에서 구경만 할 때 쓰는 말이야. 등록하러 왔다고 말해 보자.'}]},
+  {en:'Sure! What’s your name?',ko:'좋아요! 이름이 뭐예요?',c:[
+    {t:'My name is {name}.',ok:1},
+    {t:'Your name is {name}.',fb:'Your는 ‘당신의’. 내 이름은 My name is ~.'},
+    {t:'I’m fine, thanks.',fb:'안부를 물을 때 하는 대답이야. 지금은 이름을 물었어.'}]},
+  {en:'Nice to meet you, {name}. Where are you from?',ko:'만나서 반가워요, {name}. 어디에서 왔어요?',c:[
+    {t:'I’m from Korea.',ok:1},
+    {t:'I’m going to Korea.',fb:'going to는 ‘~로 가는 중’. 출신은 I’m from ~.'},
+    {t:'I’m Korea.',fb:'‘나는 한국이다’가 돼 버려. from을 넣자.'}]},
+  {en:'And how old are you?',ko:'그리고 몇 살이에요?',c:[
+    {t:'I’m twenty years old.',ok:1},
+    {t:'I have twenty years.',fb:'영어는 나이를 have로 말하지 않아. I’m ~ years old.'},
+    {t:'How old am I?',fb:'질문을 되묻고 있어. 나이를 대답해 보자.'}]},
+  {en:'Which class would you like to take?',ko:'어느 반을 듣고 싶어요?',c:[
+    {t:'The A1 class, please.',ok:1},
+    {t:'Yes, I would.',fb:'Which(어느 것) 질문에는 Yes/No 대신 고른 것을 말해.'},
+    {t:'I take a taxi.',fb:'take a class(수업을 듣다)와 take a taxi(택시를 타다)를 헷갈렸어.'}]},
+  {en:'Great. Here’s your student card. Classes start on Monday.',ko:'좋아요. 여기 학생증이에요. 수업은 월요일에 시작해요.',c:[
+    {t:'Thank you so much!',ok:1},
+    {t:'You’re welcome.',fb:'감사 인사를 받았을 때 하는 말이야. 지금은 내가 고마워할 차례.'},
+    {t:'Here you are.',fb:'무언가를 건네줄 때 쓰는 말이야.'}]}
+ ],end:['You’re welcome. Enjoy your time at Maple!','천만에요. 메이플에서 즐겁게 지내요!']},
+
+ cafe:{npc:'sam',steps:[
+  {en:'Hi there! What can I get for you?',ko:'안녕하세요! 뭘 드릴까요?',c:[
+    {t:'Can I have an iced americano, please?',ok:1},
+    {t:'Can you have an iced americano?',fb:'Can you have ~?는 ‘당신이 마실래요?’가 돼. 주문은 Can I have ~?'},
+    {t:'I want go coffee.',fb:'want 뒤엔 to가 필요하고, 뜻도 어색해. Can I have ~, please?'}]},
+  {en:'Sure. What size would you like?',ko:'네. 어떤 사이즈로 드릴까요?',c:[
+    {t:'Medium, please.',ok:1},
+    {t:'Blue, please.',fb:'색이 아니라 사이즈를 물었어. Small / Medium / Large.'},
+    {t:'Two dollars, please.',fb:'가격은 점원이 말할 거야. 사이즈를 골라 보자.'}]},
+  {en:'For here or to go?',ko:'드시고 가세요, 가져가세요?',c:[
+    {t:'To go, please.',ok:1},
+    {t:'Yes, please.',fb:'A or B 질문이야. 둘 중 하나를 골라야 해.'},
+    {t:'Go here, please.',fb:'정해진 표현은 For here(매장) / To go(포장).'}]},
+  {en:'Anything else?',ko:'더 필요한 거 있으세요?',c:[
+    {t:'No, that’s all. Thanks.',ok:1},
+    {t:'Yes, that’s all.',fb:'더 없으면 No, that’s all. Yes와 that’s all은 서로 안 맞아.'},
+    {t:'Something else, you?',fb:'점원에게 되묻는 어색한 문장이야.'}]},
+  {en:'That’s four fifty.',ko:'4달러 50센트입니다.',c:[
+    {t:'Can I pay by card?',ok:1},
+    {t:'How much is it?',fb:'방금 가격을 말해 줬어! four fifty = 4.50달러.'},
+    {t:'Can I pay on card?',fb:'‘카드로’는 by card.'}]}
+ ],end:['Of course. Here’s your drink. Have a nice day!','물론이죠. 음료 나왔습니다. 좋은 하루 보내세요!']},
+
+ borrow:{npc:'brown',steps:[
+  {en:'Hello. Can I help you?',ko:'안녕하세요. 도와드릴까요?',c:[
+    {t:'Yes, I’d like to borrow this book.',ok:1},
+    {t:'Yes, I’d like to buy this book.',fb:'도서관에서는 사지 않고 빌려. borrow!'},
+    {t:'Yes, I’d like to lend this book.',fb:'lend는 ‘빌려주다’. 내가 빌리는 건 borrow.'}]},
+  {en:'Do you have a library card?',ko:'도서관 카드 있으세요?',c:[
+    {t:'I have a student card. Is that okay?',ok:1},
+    {t:'No, I don’t like cards.',fb:'카드를 좋아하는지 물은 게 아니야. 학교에서 받은 학생증을 떠올려 봐.'},
+    {t:'Yes, I have a credit card.',fb:'신용카드로는 책을 빌릴 수 없어. 학생증이 있잖아!'}]},
+  {en:'Yes, a student card works. Here you go.',ko:'네, 학생증도 돼요. 여기 있어요.',c:[
+    {t:'Thanks. When is it due?',ok:1},
+    {t:'Thanks. How much is it?',fb:'도서관 대여는 무료야. 반납일을 물어보자.'},
+    {t:'Thanks. Where is it due?',fb:'반납 ‘날짜’는 When으로 물어.'}]},
+  {en:'It’s due in two weeks.',ko:'2주 후까지 반납하시면 돼요.',c:[
+    {t:'Okay, I’ll bring it back by then.',ok:1},
+    {t:'Okay, I brought it back yesterday.',fb:'아직 빌리지도 않았는데 과거형이야. 앞으로의 일은 I’ll ~.'},
+    {t:'Okay, I’ll keep it forever.',fb:'2주 안에 돌려줘야 해!'}]}
+ ],end:['Enjoy the book!','즐겁게 읽으세요!']},
+
+ clothes:{npc:'emma',steps:[
+  {en:'Hi! Are you looking for anything special?',ko:'안녕하세요! 특별히 찾는 거 있으세요?',c:[
+    {t:'Yes, I’m looking for a T-shirt.',ok:1},
+    {t:'Yes, I’m looking at you.',fb:'look at은 ‘~을 쳐다보다’. 찾을 때는 look for.'},
+    {t:'No, I’m a T-shirt.',fb:'‘나는 티셔츠예요’가 돼 버렸어.'}]},
+  {en:'The T-shirts are over here. What size do you wear?',ko:'티셔츠는 이쪽에 있어요. 어떤 사이즈 입으세요?',c:[
+    {t:'I usually wear a medium.',ok:1},
+    {t:'I usually wear blue.',fb:'색이 아니라 사이즈를 물었어.'},
+    {t:'I’m wear medium.',fb:'be동사와 일반동사를 같이 쓰면 안 돼. I wear ~.'}]},
+  {en:'This one is popular. Do you like the color?',ko:'이게 인기 있어요. 색은 마음에 드세요?',c:[
+    {t:'Do you have it in black?',ok:1},
+    {t:'Do you have it in medium?',fb:'사이즈는 이미 말했어. 지금은 색 이야기야.'},
+    {t:'Do you like it in black?',fb:'점원의 취향을 묻는 말이 돼. 다른 색이 있는지는 Do you have it in ~?'}]},
+  {en:'Here’s a black one. Would you like to try it on?',ko:'여기 검은색이요. 입어 보시겠어요?',c:[
+    {t:'Yes, where is the fitting room?',ok:1},
+    {t:'Yes, where is the kitchen?',fb:'옷을 입어 보는 곳은 fitting room.'},
+    {t:'Yes, I’ll try it off.',fb:'try on(입어 보다)의 반대는 없어. take off는 ‘벗다’.'}]},
+  {en:'So, how does it fit?',ko:'자, 잘 맞으세요?',c:[
+    {t:'It fits well. I’ll take it.',ok:1},
+    {t:'It fits well. I’ll make it.',fb:'가게에서 ‘이걸로 할게요’는 I’ll take it.'},
+    {t:'It’s fit good.',fb:'It fits well. fit은 일반동사야.'}]}
+ ],end:['Great choice! You can pay at the counter.','좋은 선택이에요! 계산대에서 결제하시면 돼요.']},
+
+ bench:{npc:'leo',steps:[
+  {en:'*A student is reading on the bench. The seat next to him is empty.*',ko:'벤치에 한 학생이 책을 읽고 있다. 옆자리는 비어 있다.',c:[
+    {t:'Excuse me, is this seat taken?',ok:1},
+    {t:'Excuse me, move please.',fb:'명령처럼 들려서 무례할 수 있어. 자리가 비었는지 먼저 물어보자.'},
+    {t:'Excuse me, is this seat tasty?',fb:'tasty는 ‘맛있는’. 자리 주인이 있는지는 taken.'}]},
+  {en:'No, go ahead. Have a seat.',ko:'아뇨, 앉으세요.',c:[
+    {t:'Thanks. Nice weather today, isn’t it?',ok:1},
+    {t:'Thanks. Nice weather today, is it?',fb:'긍정문 뒤 부가의문문은 부정형! isn’t it?'},
+    {t:'Thanks. The weather is nicely.',fb:'be동사 뒤에는 형용사. The weather is nice.'}]},
+  {en:'Yeah, it’s really nice. Are you new here?',ko:'응, 정말 좋네. 여기 처음이야?',c:[
+    {t:'Yes, I just started at Maple Language School.',ok:1},
+    {t:'No, I’m old here.',fb:'old here라는 표현은 없어. 새로 왔으니 Yes!'},
+    {t:'Yes, I just start at Maple Language School.',fb:'이미 시작했으니 과거형 started.'}]},
+  {en:'Cool! I’m Leo. What do you like to do on weekends?',ko:'멋지다! 난 레오야. 주말에 뭐 하는 거 좋아해?',c:[
+    {t:'I like watching movies. How about you?',ok:1},
+    {t:'I like weekends.',fb:'주말을 좋아하는지가 아니라, 주말에 뭘 하는지 물었어.'},
+    {t:'I watched movies tomorrow.',fb:'과거형과 tomorrow는 함께 쓸 수 없어.'}]},
+  {en:'I like playing soccer here in the park. See you around!',ko:'난 여기 공원에서 축구하는 걸 좋아해. 또 보자!',c:[
+    {t:'See you around, Leo!',ok:1},
+    {t:'Welcome, Leo!',fb:'Welcome은 맞이할 때 하는 말이야. 헤어질 땐 See you!'},
+    {t:'Thank you for the food!',fb:'음식을 받은 게 아니야. 작별 인사를 해 보자.'}]}
+ ],end:['Bye!','안녕!']},
+
+ street:{npc:'tom',steps:[
+  {en:'Excuse me! I’m a little lost. Do you know where the library is?',ko:'실례합니다! 길을 좀 잃었어요. 도서관이 어디 있는지 아세요?',c:[
+    {t:'Yes, it’s across from the cafe.',ok:1},
+    {t:'Yes, it’s inside the cafe.',fb:'지도를 떠올려 봐. 도서관은 카페 ‘맞은편’(across from)에 있어.'},
+    {t:'No, I’m not a library.',fb:'‘나는 도서관이 아니에요’가 돼 버렸어.'}]},
+  {en:'Across from the cafe? Is it far from here?',ko:'카페 맞은편이요? 여기서 멀어요?',c:[
+    {t:'No, it’s about a two-minute walk.',ok:1},
+    {t:'No, it’s two minutes far.',fb:'거리는 a two-minute walk(걸어서 2분)처럼 말해.'},
+    {t:'No, it’s very farther.',fb:'farther는 비교급이라 very와 어울리지 않아. 그리고 멀지 않잖아!'}]},
+  {en:'Which way should I go?',ko:'어느 쪽으로 가야 해요?',c:[
+    {t:'Go straight along this street. It’s on your left.',ok:1},
+    {t:'Go straight on my left.',fb:'길을 알려줄 땐 상대 기준! on your left.'},
+    {t:'Turn yourself left.',fb:'Turn left가 자연스러워. yourself는 필요 없어.'}]},
+  {en:'Thank you so much! You’re very kind.',ko:'정말 고마워요! 친절하시네요.',c:[
+    {t:'You’re welcome. Have a nice day!',ok:1},
+    {t:'Thank you too much.',fb:'too much는 ‘지나치게’라는 뜻이야. 감사 인사에는 You’re welcome.'},
+    {t:'Yes, I’m very kind.',fb:'칭찬을 그대로 인정하면 어색해. You’re welcome!'}]}
+ ],end:['You too!','당신도요!']},
+
+ ret:{npc:'brown',steps:[
+  {en:'Welcome back! How was the book?',ko:'다시 왔네요! 책은 어땠어요?',c:[
+    {t:'It was great. I’d like to return it.',ok:1},
+    {t:'It is great. I’d like to borrow it.',fb:'이미 빌린 책이야. 돌려줄 땐 return.'},
+    {t:'It was great. I’d like to keep it.',fb:'도서관 책은 돌려줘야 해!'}]},
+  {en:'Thanks. Did you finish it?',ko:'고마워요. 다 읽었어요?',c:[
+    {t:'Yes, I finished it last night.',ok:1},
+    {t:'Yes, I finish it tomorrow.',fb:'Did로 물었으니 과거형으로 대답하자.'},
+    {t:'Yes, I’m finishing it last night.',fb:'last night엔 과거형 finished.'}]},
+  {en:'Great, it’s on time. Do you want to borrow another one?',ko:'좋아요, 기한 안에 반납했네요. 다른 책도 빌릴래요?',c:[
+    {t:'Not today, thanks.',ok:1},
+    {t:'Yes, I return it.',fb:'빌릴지 물었는데 반납한다고 대답했어.'},
+    {t:'On time, please.',fb:'질문과 맞지 않는 대답이야. 빌릴지 말지 말해 보자.'}]}
+ ],end:['No problem. See you next time!','괜찮아요. 다음에 또 봐요!']}
+};
+
+const QUESTS=[
+  {id:'intro',npc:'mia',title:'도우미 학생 만나기',desc:'옆에 있는 Mia에게 말을 걸어 인사해요.',xp:10},
+  {id:'register',npc:'parker',title:'입학 등록하기',desc:'북쪽 학교 정문의 Ms. Parker에게 등록해요.',xp:40},
+  {id:'cafe',npc:'sam',title:'카페에서 음료 주문하기',desc:'큰길 북서쪽 카페의 Sam에게 주문해요.',xp:30},
+  {id:'borrow',npc:'brown',title:'도서관에서 책 빌리기',desc:'카페 맞은편 도서관의 Mr. Brown을 찾아가요.',xp:30},
+  {id:'clothes',npc:'emma',title:'옷 가게에서 티셔츠 고르기',desc:'큰길 북동쪽 옷 가게의 Emma와 이야기해요.',xp:30},
+  {id:'bench',npc:'leo',title:'공원 벤치에서 대화하기',desc:'남동쪽 공원 벤치에 앉은 학생에게 말을 걸어요.',xp:30},
+  {id:'street',npc:'tom',title:'길 잃은 관광객 도와주기',desc:'사거리에 서 있는 Tom에게 길을 알려줘요.',xp:30},
+  {id:'ret',npc:'brown',title:'도서관에 책 반납하기',desc:'다 읽은 책을 Mr. Brown에게 돌려줘요.',xp:30}
+];
+const MIA_HINT={
+  register:['The school is straight to the north. Talk to Ms. Parker at the front door!','학교는 북쪽으로 쭉 가면 있어. 정문 앞 파커 선생님에게 말을 걸어 봐!'],
+  cafe:['Let’s grab a drink! The cafe is on the north side of the main street, to the west.','음료 한잔하자! 카페는 큰길 북서쪽에 있어.'],
+  borrow:['The library is across from the cafe. Let’s borrow a book.','도서관은 카페 맞은편이야. 책 한 권 빌리자.'],
+  clothes:['I need a new T-shirt. The clothing store is on the east side.','새 티셔츠가 필요해. 옷 가게는 동쪽에 있어.'],
+  bench:['Let’s rest in the park. Someone is sitting on the bench.','공원에서 좀 쉬자. 벤치에 누가 앉아 있네.'],
+  street:['Look! That man near the crossroads looks lost.','저기 봐! 사거리 근처 남자가 길을 잃은 것 같아.'],
+  ret:['Did you finish your book? Let’s return it to the library.','책 다 읽었어? 도서관에 반납하러 가자.'],
+  done:['You did everything today! I’m so proud of you.','오늘 할 일을 다 했어! 정말 대단해.']
+};
+const DLG_BY_NPC={parker:['register'],sam:['cafe'],brown:['borrow','ret'],emma:['clothes'],leo:['bench'],tom:['street']};
+
+/* ================= SAVE ================= */
+const SAVE_KEY='road-to-a1-english:save';
+let save=null;
+function loadSave(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&typeof s==='object'&&Array.isArray(s.done))return s}catch(e){}return null}
+function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch(e){}}
+function clearSave(){try{localStorage.removeItem(SAVE_KEY)}catch(e){}}
+function newSave(name){return{name:name,xp:0,step:0,done:[],stats:{right:0,wrong:0},log:[],created:Date.now()}}
+const XP_PER=50;
+function levelOf(xp){return Math.min(10,Math.floor(xp/XP_PER))}
+
+/* ================= THREE SETUP ================= */
+const stage=$('#stage');
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color('#9fd3f0');
+scene.fog=new THREE.Fog('#9fd3f0',70,140);
+const camera=new THREE.PerspectiveCamera(50,1,0.1,400);
+scene.add(new THREE.HemisphereLight('#ffffff','#7aa35a',0.75));
+const sunL=new THREE.DirectionalLight('#fff4dc',0.8);
+sunL.position.set(30,50,20);sunL.castShadow=true;
+sunL.shadow.mapSize.set(2048,2048);
+Object.assign(sunL.shadow.camera,{left:-70,right:70,top:70,bottom:-70,near:1,far:150});
+scene.add(sunL);
+
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+window.addEventListener('resize',resize);resize();
+
+const matCache={};
+function lam(c){return matCache[c]||(matCache[c]=new THREE.MeshLambertMaterial({color:c}))}
+function box(w,h,d,c,x,y,z,cast=true){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),lam(c));m.position.set(x,y,z);m.castShadow=cast;m.receiveShadow=true;scene.add(m);return m}
+
+function roundRect(x,X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()}
+function textSprite(text,o){
+  o=Object.assign({size:56,color:'#1f2a44',bg:'rgba(255,255,255,.94)',pad:22,scale:0.011},o||{});
+  const c=document.createElement('canvas'),x=c.getContext('2d');
+  const f=o.size+'px "Jua","Gowun Dodum",sans-serif';x.font=f;
+  const w=Math.ceil(x.measureText(text).width)+o.pad*2,h=Math.ceil(o.size+o.pad*1.4);
+  c.width=w;c.height=h;x.font=f;
+  if(o.bg){x.fillStyle=o.bg;roundRect(x,0,0,w,h,h/2.4);x.fill()}
+  x.fillStyle=o.color;x.textAlign='center';x.textBaseline='middle';x.fillText(text,w/2,h/2+3);
+  const t=new THREE.CanvasTexture(c);t.minFilter=THREE.LinearFilter;
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthWrite:false,transparent:true}));
+  s.scale.set(w*o.scale,h*o.scale,1);return s;
+}
+
+/* ================= WORLD ================= */
+const colliders=[];
+const mapShapes=[];
+function addCollider(x,z,w,d,pad){pad=pad==null?0.5:pad;colliders.push({minX:x-w/2-pad,maxX:x+w/2+pad,minZ:z-d/2-pad,maxZ:z+d/2+pad})}
+
+function buildWorld(){
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(160,160),lam('#8cc56b'));
+  ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+  // roads
+  box(124,0.06,7,'#6d7484',0,0.03,0,false);
+  box(7,0.06,96,'#6d7484',0,0.031,14,false);
+  box(124,0.08,1.6,'#d9d4c7',0,0.04,-4.3,false);box(124,0.08,1.6,'#d9d4c7',0,0.04,4.3,false);
+  box(1.6,0.08,60,'#d9d4c7',-4.3,0.041,-1,false);box(1.6,0.08,60,'#d9d4c7',4.3,0.041,-1,false);
+  box(1.6,0.08,56,'#d9d4c7',-4.3,0.041,34,false);box(1.6,0.08,56,'#d9d4c7',4.3,0.041,34,false);
+  for(let i=-56;i<=56;i+=6){if(Math.abs(i)>6)box(3,0.07,0.25,'#f4f1e6',i,0.05,0,false)}
+  for(let i=-28;i<=60;i+=6){if(Math.abs(i)>6)box(0.25,0.07,3,'#f4f1e6',0,0.05,i,false)}
+  for(let i=-2.6;i<=2.6;i+=1.3){box(0.7,0.08,2.4,'#f4f1e6',i,0.06,-5.8,false);box(0.7,0.08,2.4,'#f4f1e6',i,0.06,5.8,false)}
+  mapShapes.push({t:'road',x:0,z:0,w:124,d:7},{t:'road',x:0,z:14,w:7,d:96});
+  // school plaza
+  box(30,0.07,8,'#d9d4c7',0,0.035,-27,false);
+
+  // buildings
+  building({x:0,z:-39,w:28,d:14,h:9,color:'#efdfbd',roof:'#b5473a',roofH:4,face:1,label:'🏫 Maple Language School',mapColor:'#b5473a'});
+  building({x:-22,z:-15,w:12,d:10,h:5,color:'#f3c9a0',roof:'#6b4a3a',roofH:2.6,face:1,label:'☕ Cafe',awning:'#2f8f60',mapColor:'#8a5a3c'});
+  building({x:-22,z:15,w:14,d:10,h:6.5,color:'#c9d6e8',roof:'#38507a',roofH:3,face:-1,label:'📚 Library',mapColor:'#38507a'});
+  building({x:22,z:-15,w:12,d:10,h:5,color:'#f6dbe6',roof:'#8f3c5c',roofH:2.6,face:1,label:'👕 Clothing Store',awning:'#f2b705',mapColor:'#8f3c5c'});
+  building({x:-44,z:-15,w:9,d:9,h:4.5,color:'#e8e2d0',roof:'#5a6b4a',roofH:2.6,face:1,mapColor:'#9aa38a'});
+  building({x:44,z:-15,w:9,d:9,h:4.5,color:'#dfe8e1',roof:'#7a4a3a',roofH:2.6,face:1,mapColor:'#9aa38a'});
+  building({x:-44,z:15,w:9,d:9,h:4.5,color:'#f0e0d0',roof:'#4a5a7a',roofH:2.6,face:-1,mapColor:'#9aa38a'});
+  building({x:-22,z:36,w:10,d:9,h:4.5,color:'#e3e8f0',roof:'#8a4a4a',roofH:2.6,face:-1,mapColor:'#9aa38a'});
+
+  // school details: flagpole and fence posts
+  box(0.2,8,0.2,'#c8ccd4',11,4,-29.5);
+  const flag=box(2.2,1.3,0.05,'#f2b705',12.1,7.3,-29.5);flag.userData.flag=true;
+  for(let x=-14;x<=14;x+=2){if(Math.abs(x)>4){box(0.25,0.9,0.25,'#ffffff',x,0.45,-30.8)}}
+  box(10.5,0.15,0.12,'#ffffff',-9.2,0.75,-30.8,false);box(10.5,0.15,0.12,'#ffffff',9.2,0.75,-30.8,false);
+
+  // park
+  const park=new THREE.Mesh(new THREE.CircleGeometry(15,40),lam('#79b85a'));
+  park.rotation.x=-Math.PI/2;park.position.set(27,0.02,25);park.receiveShadow=true;scene.add(park);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(7.2,8.8,48),lam('#e2d6b8'));
+  ring.rotation.x=-Math.PI/2;ring.position.set(27,0.03,25);scene.add(ring);
+  box(8,0.06,1.6,'#e2d6b8',8.5,0.04,19.5,false);
+  const pond=new THREE.Mesh(new THREE.CircleGeometry(4,32),lam('#5aa9d6'));
+  pond.rotation.x=-Math.PI/2;pond.position.set(29,0.04,27);scene.add(pond);
+  colliders.push({minX:25,maxX:33,minZ:23,maxZ:31});
+  mapShapes.push({t:'park',x:27,z:25,r:15},{t:'pond',x:29,z:27,r:4});
+  // bench behind Leo
+  box(3,0.12,0.9,'#a0673a',24,0.55,21.1);box(3,0.8,0.12,'#a0673a',24,1.0,21.6);
+  box(0.12,0.55,0.8,'#4a4a4a',22.8,0.27,21.1);box(0.12,0.55,0.8,'#4a4a4a',25.2,0.27,21.1);
+  addCollider(24,21.3,3,1,0.3);
+  box(3,0.12,0.9,'#a0673a',33,0.55,17.5);box(3,0.8,0.12,'#a0673a',33,1.0,17.0);
+  addCollider(33,17.3,3,1,0.3);
+
+  // trees
+  const trees=[[18,16],[20,32],[36,20],[37,32],[24,37],[15,26],[33,13],[-10,-50],[10,-50],[-30,-30],[30,-30],[-52,0],[52,0],[-34,28],[-12,48],[14,48],[44,40],[-50,40],[50,-40],[-50,-40],[-14,26],[14,-22],[-14,-22]];
+  trees.forEach(p=>tree(p[0],p[1],0.8+Math.random()*0.5));
+  // lamps
+  for(let x=-48;x<=48;x+=16){if(x!==0){lamp(x,-5.4);lamp(x+8,5.4)}}
+  for(let z=12;z<=56;z+=14){lamp(-5.4,z)}
+  // flowers
+  const fc=['#f26d7d','#f7c948','#ffffff','#b48ef0'];
+  for(let i=0;i<70;i++){const a=Math.random()*Math.PI*2,r=9.5+Math.random()*4.5;const f=new THREE.Mesh(new THREE.SphereGeometry(0.16,6,5),lam(fc[i%4]));f.position.set(27+Math.cos(a)*r,0.18,25+Math.sin(a)*r);scene.add(f)}
+}
+
+function building(o){
+  const face=o.face||1;
+  box(o.w,o.h,o.d,o.color,o.x,o.h/2,o.z);
+  const rg=new THREE.Group(),m=Math.max(o.w,o.d);
+  const cone=new THREE.Mesh(new THREE.ConeGeometry(m*0.76,o.roofH,4),lam(o.roof));cone.rotation.y=Math.PI/4;cone.castShadow=true;rg.add(cone);
+  rg.scale.set(o.w/m,1,o.d/m);rg.position.set(o.x,o.h+o.roofH/2,o.z);scene.add(rg);
+  const fz=o.z+face*(o.d/2+0.06);
+  box(2.2,3,0.15,'#4a3428',o.x,1.5,fz,false);
+  box(0.25,0.25,0.12,'#f2b705',o.x+0.7,1.5,fz+face*0.08,false);
+  const ww=Math.min(2.2,o.w/6);
+  for(const dx of [-o.w/3,o.w/3]){box(ww,1.5,0.12,'#bfe3f5',o.x+dx,o.h*0.45,fz,false);box(ww+0.3,0.18,0.25,'#ffffff',o.x+dx,o.h*0.45-0.85,fz,false)}
+  if(o.h>7){for(const dx of [-o.w/3,0,o.w/3])box(ww,1.4,0.12,'#bfe3f5',o.x+dx,o.h*0.78,fz,false)}
+  if(o.awning){const a=box(o.w*0.85,0.18,1.8,o.awning,o.x,3.4,o.z+face*(o.d/2+0.9));a.rotation.x=face*0.18}
+  if(o.label){const s=textSprite(o.label);s.position.set(o.x,o.h+o.roofH+0.9,o.z+face*(o.d/2));scene.add(s)}
+  addCollider(o.x,o.z,o.w,o.d);
+  mapShapes.push({t:'bld',x:o.x,z:o.z,w:o.w,d:o.d,c:o.mapColor,label:o.label?o.label.split(' ')[0]:null});
+}
+function tree(x,z,s){
+  const t=new THREE.Mesh(new THREE.CylinderGeometry(0.25*s,0.35*s,2*s,8),lam('#7a5232'));t.position.set(x,s,z);t.castShadow=true;scene.add(t);
+  const l=new THREE.Mesh(new THREE.IcosahedronGeometry(1.6*s,0),lam(Math.random()<0.5?'#4f9a48':'#5fae55'));l.position.set(x,2.6*s,z);l.castShadow=true;scene.add(l);
+  colliders.push({minX:x-0.6,maxX:x+0.6,minZ:z-0.6,maxZ:z+0.6});
+}
+function lamp(x,z){box(0.15,3.6,0.15,'#3b4252',x,1.8,z);box(0.5,0.35,0.5,'#fff3c4',x,3.7,z,false)}
+
+/* ================= PEOPLE ================= */
+function makePerson(color,hair,seated){
+  const g=new THREE.Group();
+  const legs=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.7,0.3),lam('#2f3a52'));
+  if(seated){legs.rotation.x=Math.PI/2;legs.position.set(0,0.6,0.3)}else legs.position.y=0.35;
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.38,0.78,12),lam(color));body.position.y=1.08;
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.31,16,12),lam('#f1c9a5'));head.position.y=1.72;
+  const hairM=new THREE.Mesh(new THREE.SphereGeometry(0.33,16,10,0,Math.PI*2,0,Math.PI/2),lam(hair));hairM.position.y=1.77;hairM.rotation.x=-0.25;
+  const eg=new THREE.SphereGeometry(0.045,8,6);
+  const e1=new THREE.Mesh(eg,lam('#1b1b1b'));e1.position.set(-0.11,1.74,0.28);const e2=e1.clone();e2.position.x=0.11;
+  [legs,body,head,hairM,e1,e2].forEach(m=>{m.castShadow=true;g.add(m)});
+  g.userData.parts={body,head,hairM,e1,e2};
+  return g;
+}
+
+const player=makePerson('#2d5bd3','#2a1a10');
+scene.add(player);
+const npcObjs={};
+let marker=null;
+
+function buildPeople(){
+  NPCS.forEach(n=>{
+    const g=makePerson(n.color,n.hair,n.seated);
+    g.position.set(n.pos[0],0,n.pos[1]);g.rotation.y=n.rot||0;
+    const lab=textSprite(n.name,{size:44,scale:0.009});lab.position.y=n.seated?2.55:2.75;g.add(lab);
+    scene.add(g);npcObjs[n.id]={def:n,obj:g,baseRot:n.rot||0};
+    if(!n.buddy&&!n.seated)colliders.push({minX:n.pos[0]-0.5,maxX:n.pos[0]+0.5,minZ:n.pos[1]-0.5,maxZ:n.pos[1]+0.5,npc:n.id});
+  });
+  marker=textSprite('!',{size:90,color:'#3a2c00',bg:'#f2b705',pad:24,scale:0.012});
+  marker.visible=false;scene.add(marker);
+}
+
+/* ================= STATE ================= */
+let mode=null; // 'explore' | 'enroll'
+let started=false;
+let dlg=null;
+let nearNpc=null;
+const keys={};
+const joy={x:0,y:0,id:null};
+
+function currentQuest(){if(mode!=='enroll'||!save)return null;return QUESTS[save.step]||null}
+
+function startGame(m){
+  mode=m;started=true;
+  $('#title').classList.add('hidden');$('#hud').classList.remove('hidden');
+  player.position.set(0,0,24);player.rotation.y=Math.PI;
+  const mia=npcObjs.mia.obj;
+  mia.visible=(m==='enroll');mia.position.set(2.6,0,25.5);mia.rotation.y=Math.PI;
+  camPos.set(0,16,38);camLook.set(0,1.2,24);camYaw=0;camPitch=0.82;camDist=20;
+  updateHUD();
+  if(m==='enroll'&&save.step===0){setTimeout(()=>toast('옆에 있는 Mia에게 다가가 말을 걸어 보세요'),400)}
+  if(m==='explore'){setTimeout(()=>toast('마을 사람에게 다가가 대화를 연습해 보세요'),400)}
+}
+function toTitle(){
+  closeDialogue();started=false;mode=null;
+  $('#hud').classList.add('hidden');$('#title').classList.remove('hidden');refreshTitle();
+}
+function refreshTitle(){
+  save=loadSave();
+  if(save){
+    $('#enrollTitle').textContent='이어서 하기';
+    const left=QUESTS.length-Math.min(save.step,QUESTS.length);
+    $('#enrollPill').textContent=save.name+' · Lv.'+levelOf(save.xp)+(left?' · 남은 퀘스트 '+left+'개':' · 모든 퀘스트 완료');
+    $('#resetBtn').classList.remove('hidden');
+  }else{
+    $('#enrollTitle').textContent='학교 입학하기';
+    $('#enrollPill').textContent='퀘스트 '+QUESTS.length+'개';
+    $('#resetBtn').classList.add('hidden');
+  }
+}
+
+/* ================= HUD ================= */
+function updateHUD(){
+  const st=$('#status');
+  if(mode==='explore'){
+    $('#modeTag').textContent='자유 둘러보기';
+    $('#lv').textContent='';st.querySelector('.xpbar').classList.add('hidden');$('#xpText').classList.add('hidden');
+    $('#qTitle').textContent='마을 둘러보기';
+    $('#qDesc').textContent='학교, 카페, 도서관, 옷 가게, 공원을 돌아다니며 아무에게나 말을 걸어 보세요.';
+    return;
+  }
+  st.querySelector('.xpbar').classList.remove('hidden');$('#xpText').classList.remove('hidden');
+  $('#modeTag').textContent='학교 입학 · '+save.name;
+  const lv=levelOf(save.xp);
+  $('#lv').textContent='Lv.'+lv;
+  const into=lv>=10?XP_PER:save.xp-lv*XP_PER;
+  $('#xpFill').style.width=(into/XP_PER*100)+'%';
+  const tot=save.stats.right+save.stats.wrong;
+  $('#xpText').textContent=(lv>=10?'최고 레벨':(into+' / '+XP_PER+' XP'))+(tot?'  ·  정답률 '+Math.round(save.stats.right/tot*100)+'%':'');
+  const q=currentQuest();
+  if(q){$('#qTitle').textContent='퀘스트 '+(save.step+1)+'/'+QUESTS.length+': '+q.title;$('#qDesc').textContent=q.desc}
+  else{$('#qTitle').textContent='모든 퀘스트 완료!';$('#qDesc').textContent='Road to A1 마을 생활을 마쳤어요. 자유롭게 다니며 대화를 복습할 수 있어요.'}
+}
+function toast(t,gold){const el=document.createElement('div');el.className='toast'+(gold?' gold':'');el.textContent=t;$('#toasts').appendChild(el);setTimeout(()=>el.remove(),3200)}
+
+/* ================= DIALOGUE ================= */
+const fill=s=>s.replace(/\{name\}/g,(save&&save.name)||'friend');
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function fmtLine(s){const t=fill(s);const esc=t.replace(/&/g,'&amp;').replace(/</g,'&lt;');return esc.replace(/\*(.+?)\*/g,'<em>$1</em>')}
+
+function openFor(id){
+  const n=npcObjs[id].def;
+  if(id==='mia'){
+    const q=currentQuest();
+    if(q&&q.id==='intro')return openDialogue(n,'intro','quest');
+    const h=q?MIA_HINT[q.id]:MIA_HINT.done;
+    return openNote(n,h[0],h[1],q?'다음 퀘스트: '+q.title:'');
+  }
+  const list=DLG_BY_NPC[id];
+  if(mode==='explore'){
+    const did=list.length>1&&npcObjs[id].toggle?list[1]:list[0];
+    if(list.length>1)npcObjs[id].toggle=!npcObjs[id].toggle;
+    return openDialogue(n,did,'practice');
+  }
+  const q=currentQuest();
+  if(q&&q.npc===id)return openDialogue(n,q.id,'quest');
+  const doneHere=list.filter(d=>save.done.includes(d));
+  if(doneHere.length)return openDialogue(n,doneHere[doneHere.length-1],'practice');
+  const hint=q?(q.id==='intro'?'Mia: 먼저 나랑 인사부터 하자!':'Mia: 지금은 「'+q.title+'」 차례야. '+q.desc):'';
+  openNote(n,IDLE[id][0],IDLE[id][1],hint);
+}
+
+function setWho(n){
+  const f=$('#face');f.style.background=n.color;f.textContent=n.name.replace('Ms. ','').replace('Mr. ','')[0];
+  $('#whoName').textContent=n.name;$('#whoRole').textContent=n.role;
+}
+function showDlg(){$('#dlg').classList.remove('hidden');$('#prompt').classList.add('hidden')}
+
+function openNote(n,en,ko,note){
+  dlg={npc:n,note:true,line:en};
+  setWho(n);$('#youLine').textContent='';
+  $('#npcLine').innerHTML=fmtLine(en);$('#koLine').textContent=fill(ko);applyKo();
+  const fb=$('#fb');fb.className='note';fb.textContent=note||'';
+  $('#dlgMeta').textContent='';
+  const ch=$('#choices');ch.innerHTML='';
+  const b=document.createElement('button');b.className='choice close';b.textContent='닫기';b.onclick=closeDialogue;ch.appendChild(b);
+  showDlg();faceNpc(n.id);b.focus({preventScroll:true});
+}
+
+function openDialogue(n,did,kind){
+  dlg={npc:n,did:did,def:D[did],kind:kind,step:0,mistakes:0,right:0};
+  setWho(n);$('#youLine').textContent='';
+  showDlg();faceNpc(n.id);renderStep();
+}
+function renderStep(){
+  const st=dlg.def.steps[dlg.step];
+  dlg.line=st.en;
+  $('#npcLine').innerHTML=fmtLine(st.en);$('#koLine').textContent=fill(st.ko);applyKo();
+  const fb=$('#fb');fb.className='';fb.textContent='';
+  $('#dlgMeta').textContent=(dlg.kind==='quest'?'퀘스트 대화':'연습 대화 · 경험치 없음')+'  '+(dlg.step+1)+' / '+dlg.def.steps.length;
+  const ch=$('#choices');ch.innerHTML='';
+  shuffle(st.c).forEach((c,i)=>{
+    const b=document.createElement('button');b.className='choice';
+    b.innerHTML='<span class="n">'+(i+1)+'</span><span></span>';b.lastChild.textContent=fill(c.t);
+    b.onclick=()=>choose(c,b);ch.appendChild(b);
+  });
+  autoSpeak();
+}
+function choose(c,b){
+  if(b.disabled)return;
+  if(c.ok){
+    dlg.right++;if(dlg.kind==='quest'&&save){save.stats.right++}
+    b.classList.add('right');
+    [...$('#choices').children].forEach(x=>x.disabled=true);
+    setTimeout(()=>{
+      $('#youLine').textContent='You: '+fill(c.t);
+      dlg.step++;
+      if(dlg.step<dlg.def.steps.length)renderStep();else endDialogue();
+    },420);
+  }else{
+    dlg.mistakes++;if(dlg.kind==='quest'&&save){save.stats.wrong++}
+    b.classList.add('wrong');b.disabled=true;
+    const fb=$('#fb');fb.className='';fb.textContent='💡 '+c.fb;
+  }
+}
+function endDialogue(){
+  const e=dlg.def.end;dlg.line=e[0];dlg.finished=true;
+  $('#npcLine').innerHTML=fmtLine(e[0]);$('#koLine').textContent=fill(e[1]);applyKo();
+  const fb=$('#fb');fb.className='note';
+  fb.textContent=dlg.mistakes===0?'⭐ 한 번도 틀리지 않았어요!':'틀린 선택 '+dlg.mistakes+'번. 다시 와서 복습할 수 있어요.';
+  if(dlg.kind==='quest'){const q=QUESTS[save.step];fb.textContent+='  보상: +'+q.xp+' XP'}
+  $('#dlgMeta').textContent='';
+  const ch=$('#choices');ch.innerHTML='';
+  const b=document.createElement('button');b.className='choice close';b.textContent=dlg.kind==='quest'?'퀘스트 완료하기':'대화 마치기';b.onclick=closeDialogue;ch.appendChild(b);
+  autoSpeak();b.focus({preventScroll:true});
+}
+function closeDialogue(){
+  if(!dlg)return;
+  const d=dlg;dlg=null;
+  $('#dlg').classList.add('hidden');
+  if(window.speechSynthesis)speechSynthesis.cancel();
+  const o=npcObjs[d.npc.id];if(o&&!o.def.buddy)o.turnBack=true;
+  if(d.finished&&d.kind==='quest'&&save){
+    const q=QUESTS[save.step];const before=levelOf(save.xp);
+    save.xp+=q.xp;save.done.push(q.id);save.step++;
+    save.log.push({q:q.id,mistakes:d.mistakes,at:Date.now()});if(save.log.length>100)save.log.shift();
+    persist();
+    toast('퀘스트 완료: '+q.title+'  +'+q.xp+' XP',true);
+    const after=levelOf(save.xp);if(after>before)setTimeout(()=>toast('레벨 업! Lv.'+after,true),600);
+    const nq=currentQuest();
+    if(nq)setTimeout(()=>toast('새 퀘스트: '+nq.title),1300);
+    else setTimeout(()=>toast('모든 퀘스트를 완료했어요! Road to A2는 다음 업데이트에서 열려요',true),1300);
+    updateHUD();
+  }else if(d.finished&&d.kind==='practice'){toast('연습 완료!')}
+  else if(save&&mode==='enroll')persist();
+}
+let koOn=false;
+function applyKo(){$('#koLine').classList.toggle('hidden',!koOn);$('#koBtn').setAttribute('aria-pressed',String(koOn))}
+$('#koBtn').onclick=()=>{koOn=!koOn;applyKo()};
+function speak(text){
+  if(!window.speechSynthesis)return;
+  const t=fill(text).replace(/\*.*?\*/g,'').trim();if(!t)return;
+  speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=0.92;
+  const v=speechSynthesis.getVoices().find(v=>/^en(-|_)US/i.test(v.lang));if(v)u.voice=v;
+  speechSynthesis.speak(u);
+}
+let autoVoice=false;
+function autoSpeak(){if(autoVoice&&dlg)speak(dlg.line)}
+$('#speakBtn').onclick=()=>{autoVoice=true;if(dlg)speak(dlg.line)};
+
+function faceNpc(id){
+  const o=npcObjs[id];if(!o||o.def.seated)return;
+  o.targetRot=Math.atan2(player.position.x-o.obj.position.x,player.position.z-o.obj.position.z);
+}
+
+/* ================= INPUT ================= */
+window.addEventListener('keydown',e=>{
+  if($('#nameModal').classList.contains('hidden')===false)return;
+  keys[e.code]=true;
+  if(!started)return;
+  if(dlg){
+    const n=parseInt(e.key,10);
+    if(n>=1&&n<=3){const b=$('#choices').children[n-1];if(b&&!b.disabled&&!b.classList.contains('close'))b.click()}
+    if(e.code==='Escape')closeDialogue();
+    return;
+  }
+  if((e.code==='KeyE'||e.code==='Space'||e.code==='Enter')&&nearNpc){e.preventDefault();openFor(nearNpc)}
+  if(e.code.startsWith('Arrow'))e.preventDefault();
+});
+window.addEventListener('keyup',e=>{keys[e.code]=false});
+window.addEventListener('blur',()=>{for(const k in keys)keys[k]=false});
+const joyEl=$('#joy'),knob=$('#knob');
+joyEl.addEventListener('pointerdown',e=>{joy.id=e.pointerId;joyEl.setPointerCapture(e.pointerId);moveJoy(e)});
+joyEl.addEventListener('pointermove',e=>{if(e.pointerId===joy.id)moveJoy(e)});
+['pointerup','pointercancel','lostpointercapture'].forEach(t=>joyEl.addEventListener(t,e=>{if(e.pointerId===joy.id){joy.id=null;joy.x=joy.y=0;knob.style.transform=''}}));
+function moveJoy(e){const r=joyEl.getBoundingClientRect();let dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);const m=r.width/2,l=Math.hypot(dx,dy);if(l>m){dx*=m/l;dy*=m/l}joy.x=dx/m;joy.y=dy/m;knob.style.transform='translate('+dx+'px,'+dy+'px)'}
+$('#prompt').onclick=()=>{if(nearNpc&&!dlg)openFor(nearNpc)};
+$('#menuBtn').onclick=toTitle;
+
+$('#exploreBtn').onclick=()=>startGame('explore');
+$('#enrollBtn').onclick=()=>{
+  save=loadSave();
+  if(save){startGame('enroll');return}
+  $('#nameModal').classList.remove('hidden');$('#nameInput').value='';setTimeout(()=>$('#nameInput').focus(),50);
+};
+function confirmName(){
+  let nm=$('#nameInput').value.trim().replace(/[<>]/g,'');
+  if(!nm)nm='Alex';
+  save=newSave(nm);persist();
+  $('#nameModal').classList.add('hidden');startGame('enroll');
+}
+$('#nameOk').onclick=confirmName;
+$('#nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')confirmName();if(e.key==='Escape')$('#nameModal').classList.add('hidden')});
+$('#nameCancel').onclick=()=>$('#nameModal').classList.add('hidden');
+$('#resetBtn').onclick=()=>{
+  if(confirm('경험치와 퀘스트 기록이 모두 지워져요. 처음부터 다시 입학할까요?')){clearSave();save=null;refreshTitle();$('#enrollBtn').click()}
+};
+
+/* ================= LOOP ================= */
+const camPos=new THREE.Vector3(0,30,60);
+const camLook=new THREE.Vector3();
+// orbit camera: free yaw, pitch limited to the upper hemisphere
+let camYaw=0,camPitch=0.82,camDist=20;
+const PITCH_MIN=0.1,PITCH_MAX=1.45,DIST_MIN=8,DIST_MAX=40;
+const cv=renderer.domElement,ptrs=new Map();let pinchD=0;
+function ptrDist(){const a=[...ptrs.values()];return Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)}
+cv.addEventListener('pointerdown',e=>{if(!started)return;ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});try{cv.setPointerCapture(e.pointerId)}catch(_){}if(ptrs.size===2)pinchD=ptrDist()});
+cv.addEventListener('pointermove',e=>{
+  const prev=ptrs.get(e.pointerId);if(!prev)return;
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(ptrs.size===2){const d=ptrDist();if(pinchD&&d)camDist=Math.max(DIST_MIN,Math.min(DIST_MAX,camDist*pinchD/d));pinchD=d;return}
+  if(ptrs.size===1){camYaw-=(e.clientX-prev.x)*0.006;camPitch=Math.max(PITCH_MIN,Math.min(PITCH_MAX,camPitch+(e.clientY-prev.y)*0.005))}
+});
+['pointerup','pointercancel','lostpointercapture'].forEach(t=>cv.addEventListener(t,e=>{ptrs.delete(e.pointerId);if(ptrs.size<2)pinchD=0}));
+cv.addEventListener('wheel',e=>{if(!started)return;e.preventDefault();camDist=Math.max(DIST_MIN,Math.min(DIST_MAX,camDist*(1+Math.sign(e.deltaY)*0.08)))},{passive:false});
+function blocked(x,z){for(const c of colliders){if(x>c.minX-0.35&&x<c.maxX+0.35&&z>c.minZ-0.35&&z<c.maxZ+0.35){if(c.npc&&c.npc==='mia')continue;return true}}return Math.abs(x)>60||Math.abs(z)>60}
+let walkT=0;
+function update(dt,t){
+  if(!started){
+    const a=t*0.06;camera.position.set(Math.sin(a)*58,32,Math.cos(a)*58);camera.lookAt(0,0,-4);
+    animateWorld(t);return;
+  }
+  let ix=0,iz=0;
+  if(!dlg){
+    if(keys.KeyW||keys.ArrowUp)iz-=1;if(keys.KeyS||keys.ArrowDown)iz+=1;
+    if(keys.KeyA||keys.ArrowLeft)ix-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;
+    ix+=joy.x;iz+=joy.y;
+  }
+  const len=Math.hypot(ix,iz);
+  const p=player.position;
+  if(len>0.08){
+    const sp=(keys.ShiftLeft||keys.ShiftRight?11:7)*Math.min(1,len);
+    const cy=Math.cos(camYaw),sy=Math.sin(camYaw);
+    const wx=(ix*cy+iz*sy)/len,wz=(-ix*sy+iz*cy)/len;
+    const dx=wx*sp*dt,dz=wz*sp*dt;
+    if(!blocked(p.x+dx,p.z))p.x+=dx;
+    if(!blocked(p.x,p.z+dz))p.z+=dz;
+    const target=Math.atan2(wx,wz);
+    player.rotation.y=lerpAngle(player.rotation.y,target,Math.min(1,dt*12));
+    walkT+=dt*sp*1.6;
+  }else walkT*=0.9;
+  player.userData.parts.body.position.y=1.08+Math.abs(Math.sin(walkT))*0.08;
+
+  // buddy follow
+  const mia=npcObjs.mia.obj;
+  if(mode==='enroll'&&!(dlg&&dlg.npc.id==='mia')){
+    const back=new THREE.Vector3(Math.sin(player.rotation.y)*-1.8+Math.cos(player.rotation.y)*1.4,0,Math.cos(player.rotation.y)*-1.8-Math.sin(player.rotation.y)*1.4);
+    const tgt=p.clone().add(back);
+    const d=mia.position.distanceTo(tgt);
+    if(d>0.4){const step=Math.min(d,(d>6?12:7)*dt);const dir=tgt.sub(mia.position).normalize();mia.position.addScaledVector(dir,step);mia.rotation.y=lerpAngle(mia.rotation.y,Math.atan2(dir.x,dir.z),Math.min(1,dt*8));mia.userData.parts.body.position.y=1.08+Math.abs(Math.sin(t*10))*0.07}
+    else mia.rotation.y=lerpAngle(mia.rotation.y,Math.atan2(p.x-mia.position.x,p.z-mia.position.z),Math.min(1,dt*4));
+  }
+
+  // npc turning
+  for(const id in npcObjs){const o=npcObjs[id];if(o.def.buddy||o.def.seated)continue;
+    if(o.turnBack){o.targetRot=o.baseRot;o.turnBack=false}
+    if(o.targetRot!=null)o.obj.rotation.y=lerpAngle(o.obj.rotation.y,o.targetRot,Math.min(1,dt*6));
+  }
+
+  // nearest npc
+  nearNpc=null;let best=3.4;
+  for(const id in npcObjs){const o=npcObjs[id];if(!o.obj.visible)continue;const d=Math.hypot(o.obj.position.x-p.x,o.obj.position.z-p.z);if(d<best){best=d;nearNpc=id}}
+  const pr=$('#prompt');
+  if(nearNpc&&!dlg){pr.classList.remove('hidden');$('#promptText').textContent=npcObjs[nearNpc].def.name+'에게 말 걸기'}else pr.classList.add('hidden');
+
+  // quest marker
+  const q=currentQuest();
+  if(q&&npcObjs[q.npc]){const o=npcObjs[q.npc].obj;marker.visible=true;marker.position.set(o.position.x,(npcObjs[q.npc].def.seated?3.4:3.6)+Math.sin(t*3)*0.15,o.position.z)}else marker.visible=false;
+
+  // camera
+  camLook.lerp(new THREE.Vector3(p.x,1.2,p.z),Math.min(1,dt*8));
+  const cp=Math.cos(camPitch);
+  camera.position.set(camLook.x+Math.sin(camYaw)*cp*camDist,camLook.y+Math.sin(camPitch)*camDist,camLook.z+Math.cos(camYaw)*cp*camDist);
+  camera.lookAt(camLook);
+  sunL.position.set(p.x+30,50,p.z+20);sunL.target.position.set(p.x,0,p.z);sunL.target.updateMatrixWorld();
+  animateWorld(t);
+  drawMap(q);
+}
+function animateWorld(t){scene.traverse(o=>{if(o.userData.flag)o.rotation.y=Math.sin(t*2)*0.12})}
+function lerpAngle(a,b,k){let d=((b-a+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;return a+d*k}
+
+/* ================= MINIMAP ================= */
+const mm=$('#minimap'),mx=mm.getContext('2d');
+function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+let mapColors=null;
+function drawMap(q){
+  if(!mapColors||Math.random()<0.01)mapColors={panel:cssVar('--panel'),mist:cssVar('--mist'),ink:cssVar('--ink'),sun:cssVar('--sun')};
+  const S=mm.width,k=S/124,c=S/2,X=x=>c+x*k,Z=z=>c+z*k;
+  mx.clearRect(0,0,S,S);mx.fillStyle='#a9d58f';roundRect(mx,0,0,S,S,30);mx.fill();
+  mx.save();roundRect(mx,0,0,S,S,30);mx.clip();
+  for(const s of mapShapes){
+    if(s.t==='road'){mx.fillStyle='#8a90a0';mx.fillRect(X(s.x-s.w/2),Z(s.z-s.d/2),s.w*k,s.d*k)}
+    else if(s.t==='park'){mx.fillStyle='#79b85a';mx.beginPath();mx.arc(X(s.x),Z(s.z),s.r*k,0,7);mx.fill()}
+    else if(s.t==='pond'){mx.fillStyle='#5aa9d6';mx.beginPath();mx.arc(X(s.x),Z(s.z),s.r*k,0,7);mx.fill()}
+    else if(s.t==='bld'){mx.fillStyle=s.c;mx.fillRect(X(s.x-s.w/2),Z(s.z-s.d/2),s.w*k,s.d*k);if(s.label){mx.font=(S*0.08)+'px sans-serif';mx.textAlign='center';mx.textBaseline='middle';mx.fillText(s.label,X(s.x),Z(s.z))}}
+  }
+  // npcs
+  for(const id in npcObjs){const o=npcObjs[id];if(!o.obj.visible)continue;mx.fillStyle=o.def.color;mx.beginPath();mx.arc(X(o.obj.position.x),Z(o.obj.position.z),S*0.018,0,7);mx.fill()}
+  if(q&&npcObjs[q.npc]){const o=npcObjs[q.npc].obj;const r=S*0.045+Math.sin(performance.now()/250)*S*0.008;mx.strokeStyle='#f2b705';mx.lineWidth=S*0.018;mx.beginPath();mx.arc(X(o.position.x),Z(o.position.z),r,0,7);mx.stroke()}
+  // player
+  const p=player.position,a=player.rotation.y;
+  mx.save();mx.translate(X(p.x),Z(p.z));mx.rotate(-a+Math.PI);
+  mx.fillStyle='#ffffff';mx.strokeStyle='#1f2a44';mx.lineWidth=S*0.012;
+  mx.beginPath();mx.moveTo(0,-S*0.045);mx.lineTo(S*0.032,S*0.032);mx.lineTo(-S*0.032,S*0.032);mx.closePath();mx.fill();mx.stroke();
+  mx.restore();mx.restore();
+}
+
+/* ================= BOOT ================= */
+let lastT=performance.now();
+function loop(now){const dt=Math.min(0.05,(now-lastT)/1000);lastT=now;update(dt,now/1000);renderer.render(scene,camera);requestAnimationFrame(loop)}
+function boot(){buildWorld();buildPeople();refreshTitle();requestAnimationFrame(loop)}
+const fontWait=document.fonts&&document.fonts.load?Promise.all([document.fonts.load('56px "Jua"'),document.fonts.load('16px "Gowun Dodum"')]):Promise.resolve();
+let booted=false;const go=()=>{if(!booted){booted=true;boot()}};
+fontWait.then(go,go);setTimeout(go,2500);
+})();
+</script>
+</body>
+</html>
